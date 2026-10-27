@@ -8,11 +8,12 @@ Aplicação web da clínica: login único para equipe e pacientes, painel de bot
 | --- | --- | --- |
 | Entrada | Todos | Login com e-mail e senha, criação de acesso e recuperação de senha |
 | Painel | Todos | Botões das áreas internas e atalhos externos, conforme o perfil. Atalhos abrem em nova aba; o painel continua aberto na aba original |
-| Agenda | Equipe | Google Agenda da clínica incorporada no painel, mais botão para abrir no Google |
+| Agenda | Equipe | Agenda própria por sala: visão por dia ou semana, de todos ou por sala, profissional e paciente. Bloqueia conflito de sala e de profissional e respeita o horário de cada sala. Situações: agendada, confirmada, realizada, faltou e cancelada. Google Agenda opcional para consulta |
+| Minhas consultas | Paciente | Próximas consultas e histórico, com sala e profissional |
 | Pacientes | Equipe | Lista com busca, cadastro e edição |
 | Ficha do paciente | Profissionais com permissão | Uma aba por especialidade: anamnese (campos comuns + campos próprios da especialidade) e atendimentos (data, tipo, evolução e conduta) |
 | Meus dados | Paciente | O próprio cadastro |
-| Administração | Mestre e administradores | Usuários e permissões, especialidades, atalhos, nome da clínica, agenda e auditoria |
+| Administração | Mestre e administradores | Usuários e permissões, salas e horários, especialidades, atalhos, nome da clínica, Google Agenda e auditoria |
 
 ## Perfis
 
@@ -20,8 +21,8 @@ Aplicação web da clínica: login único para equipe e pacientes, painel de bot
 | --- | --- |
 | Administrador mestre | Tudo o que o administrador faz, e é o único que cria ou altera administradores |
 | Administrador | Libera contas, define perfis e permissões, especialidades, atalhos e agenda |
-| Profissional | Agenda, pacientes e as fichas das especialidades liberadas, em leitura ou em leitura e escrita |
-| Recepção | Agenda e cadastro de pacientes, sem acesso às fichas clínicas |
+| Profissional | Agenda (vê a de todos e marca na própria), pacientes e as fichas das especialidades liberadas, em leitura ou em leitura e escrita |
+| Recepção | Agenda (marca para qualquer profissional) e cadastro de pacientes, sem acesso às fichas clínicas |
 | Paciente | Os próprios dados e os atalhos destinados a pacientes |
 | Aguardando liberação | Nenhum, até a administração definir o perfil |
 
@@ -75,6 +76,10 @@ Regras de proteção dos dados de saúde (LGPD):
 2. **Especialidades:** cadastre as especialidades e os campos próprios de anamnese de cada uma.
 3. **Usuários:** libere a equipe, defina perfis e as permissões por especialidade (inclusive as suas).
 4. **Atalhos:** cadastre os botões externos, como a Rede Ayla, e escolha quem vê cada um.
+
+## Atualizações do banco
+Projetos criados com o `schema.sql` atual já têm tudo. Em projetos antigos, rode no SQL Editor, uma vez:
+- `supabase/atualizacao-01-agenda.sql` · salas, agendamentos e consultas do paciente (já aplicada no projeto da clínica)
 
 ## Observações
 - A chave pública pode ficar no site: o acesso aos dados é protegido pelas regras de RLS do `schema.sql`.

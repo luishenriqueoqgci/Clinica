@@ -109,7 +109,7 @@ p { margin: 0; }
 .field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .field label, .lbl { font-weight: 700; font-size: 14px; }
 .field .hint { font-size: 13px; color: var(--ink-3); }
-input[type=text], input[type=email], input[type=password], input[type=date], input[type=url], input[type=search], input[type=tel], textarea, select {
+input[type=text], input[type=email], input[type=password], input[type=date], input[type=time], input[type=url], input[type=search], input[type=tel], textarea, select {
   width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid var(--line-2); border-radius: var(--r-sm); background: var(--surface); color: var(--ink);
 }
 textarea { min-height: 88px; resize: vertical; line-height: 1.5; }
@@ -224,6 +224,55 @@ tr:last-child td { border-bottom: 0; }
 .cal-frame { border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; background: var(--surface); }
 .cal-frame iframe { display: block; width: 100%; height: max(560px, 72vh); border: 0; }
 ol.steps { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; color: var(--ink-2); }
+/* Agenda */
+.ag-bar { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; justify-content: space-between; }
+.ag-nav { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.ag-nav h2 { font-size: 19px; margin-left: 6px; }
+.ag-icon-btn { width: 40px; height: 40px; display: inline-grid; place-items: center; border-radius: var(--r-sm); border: 1px solid var(--line-2); background: var(--surface); cursor: pointer; color: var(--ink); }
+.ag-icon-btn:hover { background: var(--surface-2); }
+.ag-filtros { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.ag-filtros select { width: auto; min-width: 170px; min-height: 40px; padding: 6px 10px; }
+.ag-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); }
+.ag-grid { display: grid; grid-template-columns: 58px repeat(var(--cols), minmax(var(--colw), 1fr)); min-width: calc(58px + var(--cols) * var(--colw)); }
+.ag-hd { position: sticky; top: 0; z-index: 2; background: var(--surface); border-bottom: 1px solid var(--line); border-left: 1px solid var(--line); padding: 10px 10px 8px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.ag-hd b { font-family: var(--font-display); font-weight: 500; font-size: 15px; display: flex; align-items: center; gap: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ag-hd span { font-size: 12px; color: var(--ink-3); font-weight: 700; }
+.ag-hd.hoje b { color: var(--accent-text); }
+.ag-corner { border-bottom: 1px solid var(--line); background: var(--surface); position: sticky; top: 0; z-index: 2; }
+.ag-times { position: relative; height: calc(var(--h) + 14px); }
+.ag-times span { position: absolute; right: 8px; transform: translateY(-50%); font-size: 12px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.ag-times span:first-child { transform: none; }
+.ag-col { position: relative; height: calc(var(--h) + 14px); border-left: 1px solid var(--line); cursor: default;
+  background-image: repeating-linear-gradient(to bottom, var(--line) 0 1px, transparent 1px var(--hora)),
+                    repeating-linear-gradient(to bottom, transparent 0 calc(var(--hora) / 2), color-mix(in srgb, var(--line) 55%, transparent) calc(var(--hora) / 2) calc(var(--hora) / 2 + 1px), transparent calc(var(--hora) / 2 + 1px) var(--hora)); }
+.ag-col.marca { cursor: copy; }
+.ag-col.marca:hover { background-color: color-mix(in srgb, var(--accent) 4%, transparent); }
+.ag-off { position: absolute; left: 0; right: 0; background: repeating-linear-gradient(135deg, var(--surface-2) 0 6px, transparent 6px 12px); pointer-events: none; }
+.ag-off-txt { position: absolute; top: 12px; left: 0; right: 0; text-align: center; font-size: 13px; font-weight: 700; color: var(--ink-3); }
+.ag-ev { position: absolute; z-index: 1; display: flex; flex-direction: column; gap: 1px; padding: 4px 7px; border-radius: 7px; border: 0; border-left: 3px solid var(--evc); background: color-mix(in srgb, var(--evc) 15%, var(--surface)); color: var(--ink); text-align: left; overflow: hidden; cursor: pointer; font-size: 12px; line-height: 1.3; }
+.ag-ev:hover { background: color-mix(in srgb, var(--evc) 24%, var(--surface)); }
+.ag-ev b { font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ag-ev span { color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ag-ev.st-realizado { opacity: .72; }
+.ag-ev.st-faltou { border-left-style: dashed; opacity: .72; }
+.ag-ev .ag-st { position: absolute; top: 4px; right: 5px; width: 8px; height: 8px; border-radius: 50%; }
+.st-dot-confirmado { background: var(--accent); }
+.st-dot-realizado { background: var(--good); }
+.st-dot-faltou { background: var(--crit); }
+.ag-legenda { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--ink-2); }
+.ag-legenda span { display: inline-flex; align-items: center; gap: 6px; }
+.modal { position: fixed; inset: 0; z-index: 40; background: rgba(12, 22, 19, .45); display: flex; align-items: flex-start; justify-content: center; overflow-y: auto;
+  padding: calc(24px + env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) calc(24px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
+.modal-card { width: 100%; max-width: 620px; background: var(--surface); border-radius: var(--r); border: 1px solid var(--line); padding: 22px; box-shadow: 0 20px 50px rgba(0, 0, 0, .2); }
+.modal-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.consultas { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); overflow: hidden; }
+.cons { display: grid; grid-template-columns: 120px 110px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 12px 16px; border-top: 1px solid var(--line); }
+.cons:first-child { border-top: 0; }
+.cons .d { font-weight: 700; }
+.cons .d span { display: block; font-size: 12px; color: var(--ink-3); font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
+@media (max-width: 620px) { .cons { grid-template-columns: 1fr auto; } .cons .h { grid-column: 1; } }
+.dias-sem { display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .confirm { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 10px 12px; border-radius: var(--r-sm); background: var(--crit-tint); color: var(--crit); font-weight: 700; font-size: 14px; }
 </style>
 
@@ -278,6 +327,26 @@ const idade = (nasc) => {
 const primeiroNome = (n) => String(n || '').trim().split(/\s+/)[0] || '';
 const hojeExtenso = () => new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo', weekday: 'long', day: 'numeric', month: 'long' });
 const normaliza = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+const TZ = 'America/Sao_Paulo';
+const DIAS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+const DIAS_LONGO = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
+const STATUS = {
+  agendado: { t: 'Agendada', c: '' }, confirmado: { t: 'Confirmada', c: 'chip-accent' }, realizado: { t: 'Realizada', c: 'chip-good' },
+  faltou: { t: 'Faltou', c: 'chip-crit' }, cancelado: { t: 'Cancelada', c: 'chip-warn' }
+};
+const DURACOES = [30, 40, 45, 50, 60, 90, 120];
+const _fp = new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+const sp = (iso) => { const o = {}; _fp.formatToParts(new Date(iso)).forEach(p => { o[p.type] = p.value; }); return { date: `${o.year}-${o.month}-${o.day}`, min: (Number(o.hour) % 24) * 60 + Number(o.minute) }; };
+const pad2 = (n) => String(n).padStart(2, '0');
+const hm = (min) => `${pad2(Math.floor(min / 60))}:${pad2(min % 60)}`;
+const minDe = (t) => { const [h, m] = String(t || '0:0').split(':').map(Number); return h * 60 + (m || 0); };
+const isoSP = (date, min) => `${date}T${hm(min)}:00-03:00`;
+const addDias = (d, n) => { const x = new Date(d + 'T12:00:00Z'); x.setUTCDate(x.getUTCDate() + n); return x.toISOString().slice(0, 10); };
+const dowDe = (d) => new Date(d + 'T12:00:00Z').getUTCDay();
+const inicioSemana = (d) => addDias(d, -((dowDe(d) + 6) % 7));
+const fmtCurto = (d) => { const [, m, dd] = d.split('-'); return `${dd}/${m}`; };
+const fmtDiaLongo = (d) => `${DIAS_LONGO[dowDe(d)]}, ${Number(d.slice(8))} de ${['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'][Number(d.slice(5, 7)) - 1]}`;
+const salaAbre = (s, d) => s && s.ativa !== false && (s.dias || []).map(Number).includes(dowDe(d));
 const safeUrl = (u) => /^https?:\/\//i.test(String(u || '').trim()) ? String(u).trim() : '';
 
 /* ============================== ARMAZENAMENTO · DEMONSTRAÇÃO ============================== */
@@ -285,7 +354,7 @@ function demoStore() {
   const KEY = 'clinica-demo-v1';
   let db = null;
   try { db = JSON.parse(localStorage.getItem(KEY)); } catch (e) { db = null; }
-  if (!db || db.v !== 1) db = seed();
+  if (!db || db.v !== 2) db = seed();
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify(db)); } catch (e) {} };
 
   function seed() {
@@ -293,7 +362,7 @@ function demoStore() {
     const d = (n) => { const x = new Date(); x.setDate(x.getDate() - n); return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(x); };
     const E1 = 'esp-neuro', E2 = 'esp-psico', E3 = 'esp-integr';
     return {
-      v: 1, session: null,
+      v: 2, session: null,
       config: { nome_clinica: 'Clínica', agenda_url: '' },
       users: [
         { id: 'u-mestre', nome: 'Luis Henrique', email: 'mestre@demo', pw: hashStr('demo'), papel: 'mestre', ativo: true, registro_profissional: '', created_at: agora },
@@ -333,8 +402,39 @@ function demoStore() {
         { id: 'l2', titulo: 'Google Agenda', descricao: 'Agenda completa no Google', url: 'https://calendar.google.com/calendar/r', cor: '#2F68B0', alvo: 'equipe', usuarios: [], ordem: 2, ativo: true },
         { id: 'l3', titulo: 'WhatsApp Web', descricao: 'Conversas com pacientes', url: 'https://web.whatsapp.com', cor: '#2D7550', alvo: 'equipe', usuarios: [], ordem: 3, ativo: true }
       ],
+      salas: [
+        { id: 's-naty', nome: 'Naty Camargo', cor: '#7A4FA0', dias: [1, 2, 3, 4, 5], abre: '08:00', fecha: '18:00', ativa: true, ordem: 1 },
+        { id: 's-fam', nome: 'Família', cor: '#2E6B5F', dias: [0, 1, 2, 3, 4, 5, 6], abre: '08:00', fecha: '18:00', ativa: true, ordem: 2 }
+      ],
+      ag: agendaExemplo(),
       audit: []
     };
+  }
+  function agendaExemplo() {
+    const hoje = hojeISO();
+    const util = (d) => { while ([0, 6].includes(dowDe(d))) d = addDias(d, 1); return d; };
+    const seg = inicioSemana(hoje);
+    const lista = [
+      [hoje, 9 * 60, 60, 's-fam', 'p1', 'u-prof', 'confirmado'],
+      [util(hoje), 10 * 60, 60, 's-naty', 'p2', 'u-mestre', 'agendado'],
+      [hoje, 14 * 60, 50, 's-fam', 'p3', 'u-prof', 'agendado'],
+      [util(hoje), 15 * 60, 60, 's-naty', 'p4', 'u-mestre', 'agendado'],
+      [seg, 8 * 60 + 30, 60, 's-naty', 'p1', 'u-mestre', 'realizado'],
+      [seg, 11 * 60, 50, 's-fam', 'p2', 'u-prof', 'realizado'],
+      [addDias(seg, 1), 13 * 60, 90, 's-fam', 'p4', 'u-prof', 'faltou'],
+      [addDias(seg, 2), 9 * 60, 60, 's-naty', 'p3', 'u-mestre', 'confirmado'],
+      [addDias(seg, 3), 16 * 60, 60, 's-fam', 'p1', 'u-prof', 'agendado'],
+      [addDias(seg, 4), 10 * 60, 60, 's-naty', 'p1', 'u-mestre', 'agendado'],
+      [addDias(seg, 5), 9 * 60, 120, 's-fam', 'p2', 'u-prof', 'agendado'],
+      [addDias(seg, 7), 9 * 60, 60, 's-naty', 'p1', 'u-mestre', 'agendado']
+    ];
+    const out = [];
+    for (const [d, ini, dur, sala, pac, prof, st] of lista) {
+      const a = { id: 'g' + out.length, paciente_id: pac, profissional_id: prof, sala_id: sala, inicio: isoSP(d, ini), fim: isoSP(d, ini + dur), status: st, observacao: '', created_at: new Date().toISOString() };
+      const choca = out.some(b => b.inicio < a.fim && a.inicio < b.fim && (b.sala_id === a.sala_id || b.profissional_id === a.profissional_id));
+      if (!choca) out.push(a);
+    }
+    return out;
   }
 
   const me = () => db.users.find(u => u.id === db.session) || null;
@@ -346,6 +446,7 @@ function demoStore() {
   const strip = (u) => { const { pw, ...r } = u; return r; };
   const nomeDe = (id) => db.users.find(u => u.id === id)?.nome || '';
   const log = (acao, o = {}) => { db.audit.unshift({ id: (db.audit[0]?.id || 0) + 1, user_id: db.session, acao, criado_em: new Date().toISOString(), ...o }); };
+  const enriquecer = (a) => { const s = db.salas.find(x => x.id === a.sala_id); return { ...a, paciente: db.pacientes.find(p => p.id === a.paciente_id)?.nome || '', profissional: nomeDe(a.profissional_id), sala: s?.nome || '', cor: s?.cor || '#2E6B5F' }; };
   const permsDe = (id) => Object.fromEntries(db.perms.filter(p => p.user_id === id).map(p => [p.especialidade_id, p.nivel]));
   const linkPorEmail = (pac) => {
     if (pac.user_id || !pac.email) return;
@@ -463,6 +564,56 @@ function demoStore() {
     async config() { return { ...db.config }; },
     async salvarConfig(chave, valor) { if (!gest()) deny(); db.config[chave] = valor; save(); },
     async registrar(acao, o = {}) { if (!papel()) return; log(acao, o); save(); },
+    async salas() { if (!eq()) return []; return [...db.salas].sort((a, b) => a.ordem - b.ordem || a.nome.localeCompare(b.nome)); },
+    async salvarSala(s) {
+      if (!gest()) deny();
+      if (db.salas.some(x => x.id !== s.id && normaliza(x.nome) === normaliza(s.nome))) deny('Já existe uma sala com este nome.');
+      if (minDe(s.fecha) <= minDe(s.abre)) deny('O horário de fechamento precisa ser depois da abertura.');
+      if (s.id) Object.assign(db.salas.find(x => x.id === s.id), s);
+      else db.salas.push({ ...s, id: uid(), ordem: db.salas.length + 1 });
+      save();
+    },
+    async profissionais() { if (!eq()) return []; return db.users.filter(u => CLINICOS.includes(u.papel) && u.ativo).map(strip).sort((a, b) => a.nome.localeCompare(b.nome)); },
+    async agenda(de, ate) {
+      if (!eq()) deny();
+      return db.ag.filter(a => a.inicio >= de && a.inicio < ate).sort((a, b) => a.inicio.localeCompare(b.inicio)).map(enriquecer);
+    },
+    async agendaPaciente(pid) { if (!eq()) deny(); return db.ag.filter(a => a.paciente_id === pid).sort((a, b) => b.inicio.localeCompare(a.inicio)).map(enriquecer); },
+    async minhasConsultas() {
+      const p = db.pacientes.find(x => x.user_id && x.user_id === db.session); if (!p) return [];
+      return db.ag.filter(a => a.paciente_id === p.id).sort((a, b) => b.inicio.localeCompare(a.inicio)).map(a => { const e = enriquecer(a); return { id: e.id, inicio: e.inicio, fim: e.fim, status: e.status, sala: e.sala, profissional: e.profissional }; });
+    },
+    async salvarAgendamento(a) {
+      const p = papel();
+      const pode = (prof) => ['mestre', 'admin', 'recepcao'].includes(p) || (p === 'profissional' && prof === db.session);
+      const antigo = a.id ? db.ag.find(x => x.id === a.id) : null;
+      if (!pode(a.profissional_id) || (antigo && !pode(antigo.profissional_id))) deny('Você só pode marcar e alterar consultas da sua própria agenda.');
+      const mudouHorario = !antigo || antigo.inicio !== a.inicio || antigo.fim !== a.fim || antigo.sala_id !== a.sala_id || antigo.profissional_id !== a.profissional_id;
+      if (mudouHorario) {
+        const s = db.salas.find(x => x.id === a.sala_id);
+        if (!s || s.ativa === false) deny('Sala indisponível.');
+        const i = sp(a.inicio), f = sp(a.fim);
+        if (i.date !== f.date) deny('A consulta precisa começar e terminar no mesmo dia.');
+        if (!s.dias.map(Number).includes(dowDe(i.date))) deny(`A sala ${s.nome} não funciona neste dia da semana.`);
+        if (i.min < minDe(s.abre) || f.min > minDe(s.fecha)) deny(`Fora do horário da sala ${s.nome} (${s.abre} às ${s.fecha}).`);
+        if (!db.users.some(u => u.id === a.profissional_id && u.ativo && CLINICOS.includes(u.papel))) deny('Escolha um profissional ativo da clínica.');
+      }
+      if (a.status !== 'cancelado') {
+        const choques = db.ag.filter(b => b.id !== a.id && b.status !== 'cancelado' && b.inicio < a.fim && a.inicio < b.fim);
+        if (choques.some(b => b.sala_id === a.sala_id)) deny('A sala já está ocupada nesse horário.');
+        if (choques.some(b => b.profissional_id === a.profissional_id)) deny('O profissional já tem consulta nesse horário.');
+      }
+      const det = `${db.salas.find(x => x.id === a.sala_id)?.nome} · ${fmtData(sp(a.inicio).date)} ${hm(sp(a.inicio).min)} · ${a.status}`;
+      if (antigo) {
+        const acao = a.status === 'cancelado' && antigo.status !== 'cancelado' ? 'Cancelou consulta' : a.status !== antigo.status ? 'Alterou situação da consulta' : 'Alterou consulta';
+        Object.assign(antigo, { paciente_id: a.paciente_id, profissional_id: a.profissional_id, sala_id: a.sala_id, inicio: a.inicio, fim: a.fim, status: a.status, observacao: a.observacao });
+        log(acao, { paciente_id: a.paciente_id, detalhe: det });
+      } else {
+        db.ag.push({ ...a, id: uid(), status: a.status || 'agendado', created_at: new Date().toISOString() });
+        log('Agendou consulta', { paciente_id: a.paciente_id, detalhe: det });
+      }
+      save();
+    },
     async auditoria() {
       if (!gest()) deny();
       return db.audit.slice(0, 300).map(x => ({ ...x, usuario: nomeDe(x.user_id), paciente: db.pacientes.find(p => p.id === x.paciente_id)?.nome || '' }));
@@ -482,10 +633,15 @@ async function liveStore() {
     if (/Password should be at least/i.test(m)) return 'A senha precisa ter pelo menos 6 caracteres.';
     if (/row-level security/i.test(m)) return 'Sem permissão para esta ação.';
     if (/duplicate key.*email/i.test(m)) return 'Já existe um paciente com este e-mail.';
+    if (/agenda_sala_livre/i.test(m)) return 'A sala já está ocupada nesse horário.';
+    if (/agenda_profissional_livre/i.test(m)) return 'O profissional já tem consulta nesse horário.';
+    if (/salas_nome_key/i.test(m)) return 'Já existe uma sala com este nome.';
     if (/duplicate key.*nome/i.test(m)) return 'Já existe uma especialidade com este nome.';
     return m;
   };
   let uidAtual = null;
+  const AG_SEL = '*, pac:pacientes(nome), prof:perfis!agendamentos_profissional_id_fkey(nome), sl:salas(nome,cor)';
+  const agRow = (r) => ({ ...r, paciente: r.pac?.nome || '', profissional: r.prof?.nome || '', sala: r.sl?.nome || '', cor: r.sl?.cor || '#2E6B5F' });
   const sess = async () => { const { data } = await sb.auth.getSession(); uidAtual = data.session?.user?.id || null; return data.session; };
   sb.auth.onAuthStateChange((ev) => { if (ev === 'PASSWORD_RECOVERY') { S.view = 'nova-senha'; render(); } });
 
@@ -559,6 +715,27 @@ async function liveStore() {
     async config() { const rows = ok(await sb.from('configuracoes').select('chave,valor')); return Object.fromEntries(rows.map(r => [r.chave, r.valor])); },
     async salvarConfig(chave, valor) { ok(await sb.from('configuracoes').upsert({ chave, valor, updated_at: new Date().toISOString() })); },
     async registrar(acao, o = {}) { await sb.from('auditoria').insert({ acao, user_id: uidAtual, paciente_id: o.paciente_id || null, detalhe: o.detalhe || null }); },
+    async salas() { return ok(await sb.from('salas').select('*').order('ordem').order('nome')); },
+    async salvarSala(s) {
+      const row = { nome: s.nome, cor: s.cor, dias: s.dias, abre: s.abre, fecha: s.fecha, ativa: s.ativa };
+      if (s.id) ok(await sb.from('salas').update(row).eq('id', s.id));
+      else ok(await sb.from('salas').insert(row));
+    },
+    async profissionais() { return ok(await sb.from('perfis').select('id,nome,papel').in('papel', CLINICOS).eq('ativo', true).order('nome')); },
+    async agenda(de, ate) {
+      const rows = ok(await sb.from('agendamentos').select(AG_SEL).gte('inicio', de).lt('inicio', ate).order('inicio'));
+      return rows.map(agRow);
+    },
+    async agendaPaciente(pid) {
+      const rows = ok(await sb.from('agendamentos').select(AG_SEL).eq('paciente_id', pid).order('inicio', { ascending: false }).limit(200));
+      return rows.map(agRow);
+    },
+    async minhasConsultas() { return ok(await sb.rpc('minhas_consultas')); },
+    async salvarAgendamento(a) {
+      const row = { paciente_id: a.paciente_id, profissional_id: a.profissional_id, sala_id: a.sala_id, inicio: a.inicio, fim: a.fim, status: a.status || 'agendado', observacao: a.observacao || null };
+      if (a.id) ok(await sb.from('agendamentos').update(row).eq('id', a.id));
+      else ok(await sb.from('agendamentos').insert(row));
+    },
     async auditoria() {
       const rows = ok(await sb.from('auditoria').select('*, usu:perfis(nome), pac:pacientes(nome)').order('criado_em', { ascending: false }).limit(300));
       return rows.map(r => ({ ...r, usuario: r.usu?.nome || '', paciente: r.pac?.nome || '' }));
@@ -572,7 +749,9 @@ const S = {
   boot: true, session: null, perfil: null, cfg: {}, view: 'login', authTab: 'entrar', authMsg: null,
   msg: null, pacientes: [], esps: [], atalhos: [], busca: '',
   pid: null, pac: null, ptab: 'cadastro', psub: 'anamnese', anam: null, atend: [], editAt: null, pform: null,
-  atab: 'usuarios', usuarios: [], audit: [], editLink: null, confirmDel: null, abertos: new Set(), busy: false
+  atab: 'usuarios', usuarios: [], audit: [], editLink: null, confirmDel: null, abertos: new Set(), busy: false,
+  salas: [], profs: [], agenda: [], consultas: [], agHoje: 0,
+  ag: { data: hojeISO(), modo: (typeof window !== 'undefined' && window.innerWidth < 720) ? 'dia' : 'semana', filtro: 'todos', alvo: '', form: null, sel: null, confirmCancel: false, google: false }
 };
 const papel = () => (S.perfil && S.perfil.ativo ? S.perfil.papel : null);
 const ehEquipe = () => EQUIPE.includes(papel());
@@ -609,6 +788,7 @@ async function rota() {
   else if (['agenda', 'pacientes'].includes(h) && ehEquipe()) S.view = h;
   else if (h === 'admin' && ehGestor()) S.view = 'admin';
   else if (h === 'meus-dados' && papel() === 'paciente') S.view = 'meus-dados';
+  else if (h === 'minhas-consultas' && papel() === 'paciente') S.view = 'minhas-consultas';
   else S.view = 'painel';
   await carregar(); render();
 }
@@ -620,22 +800,43 @@ async function carregar() {
     if (!S.perfil) return;
     if (S.view === 'painel') {
       S.atalhos = await store.atalhos();
-      if (ehEquipe()) S.pacientes = await store.pacientes();
+      if (ehEquipe()) {
+        S.pacientes = await store.pacientes();
+        const h = hojeISO();
+        S.agHoje = (await store.agenda(isoSP(h, 0), isoSP(addDias(h, 1), 0))).filter(a => a.status !== 'cancelado').length;
+      }
+    } else if (S.view === 'agenda') {
+      S.salas = await store.salas();
+      S.profs = await store.profissionais();
+      S.pacientes = await store.pacientes();
+      await carregarAgenda();
+    } else if (S.view === 'minhas-consultas') {
+      S.consultas = await store.minhasConsultas();
     } else if (S.view === 'pacientes') {
       S.pacientes = await store.pacientes();
     } else if (S.view === 'paciente') {
       S.esps = await store.especialidades();
       S.pac = await store.paciente(S.pid);
+      S.consultas = await store.agendaPaciente(S.pid);
       await carregarFicha();
     } else if (S.view === 'admin') {
       S.esps = await store.especialidades();
       if (S.atab === 'usuarios') S.usuarios = await store.usuarios();
       if (S.atab === 'atalhos') { S.atalhos = await store.atalhos(); S.usuarios = await store.usuarios(); }
       if (S.atab === 'auditoria') S.audit = await store.auditoria();
+      if (S.atab === 'salas') S.salas = await store.salas();
     } else if (S.view === 'meus-dados') {
       S.pac = await store.meuPaciente();
     }
   } catch (e) { S.msg = { err: true, t: e.message }; }
+}
+function agPeriodo() {
+  const d0 = S.ag.modo === 'dia' ? S.ag.data : inicioSemana(S.ag.data);
+  return [d0, addDias(d0, S.ag.modo === 'dia' ? 1 : 7)];
+}
+async function carregarAgenda() {
+  const [a, b] = agPeriodo();
+  S.agenda = await store.agenda(isoSP(a, 0), isoSP(b, 0));
 }
 async function carregarFicha() {
   S.anam = null; S.atend = []; S.editAt = null;
@@ -655,8 +856,8 @@ function render() {
   else if (!S.session || !S.perfil) body = vLogin();
   else if (!S.perfil.ativo) body = vBloqueado('Acesso desativado', 'O seu acesso foi desativado pela administração da clínica. Se acha que isso é um engano, fale com a recepção.');
   else if (papel() === 'pendente') body = vBloqueado('Seu acesso está aguardando liberação', 'A conta foi criada. A administração da clínica precisa definir o seu perfil antes do primeiro acesso. Se você é paciente, peça à recepção para cadastrar o seu e-mail na sua ficha; a liberação é automática.');
-  else body = ({ painel: vPainel, agenda: vAgenda, pacientes: vPacientes, 'paciente-form': vPacienteForm, paciente: vPaciente, admin: vAdmin, 'meus-dados': vMeusDados }[S.view] || vPainel)();
-  app.innerHTML = vTopo() + `<main><div class="wrap stack" style="gap:24px">${body}</div></main>`;
+  else body = ({ painel: vPainel, agenda: vAgenda, pacientes: vPacientes, 'paciente-form': vPacienteForm, paciente: vPaciente, admin: vAdmin, 'meus-dados': vMeusDados, 'minhas-consultas': vMinhasConsultas }[S.view] || vPainel)();
+  app.innerHTML = vTopo() + `<main><div class="wrap stack" style="gap:24px">${body}</div></main>` + (S.perfil && S.view === 'agenda' ? vAgForm() + vAgDetalhe() : '');
   const f = app.querySelector('[data-autofocus]'); if (f) f.focus();
   app.querySelectorAll('.tabs [aria-selected="true"]').forEach(b => { const t = b.parentElement; t.scrollLeft = Math.max(0, b.offsetLeft - t.offsetLeft - 16); });
 }
@@ -759,12 +960,15 @@ function vPainel() {
   const sub = { mestre: 'Você administra a clínica: usuários, permissões, especialidades e atalhos.', admin: 'Você administra usuários, especialidades e atalhos da clínica.', profissional: 'Agenda, pacientes e as fichas das suas especialidades.', recepcao: 'Agenda e cadastro dos pacientes.', paciente: 'Seus dados e os links que a clínica preparou para você.' }[p] || '';
   const internos = [];
   if (ehEquipe()) {
-    internos.push(tileInterno('agenda', IC.agenda, 'Agenda', 'Agenda compartilhada da clínica', S.cfg.agenda_url ? 'Google Agenda vinculada' : (ehGestor() ? 'Vincular em Administração' : ''), '#2F68B0'));
+    internos.push(tileInterno('agenda', IC.agenda, 'Agenda', 'Consultas por sala, por profissional e por paciente', `<span class="tnum">${S.agHoje} ${S.agHoje === 1 ? 'consulta hoje' : 'consultas hoje'}</span>`, '#2F68B0'));
     const n = S.pacientes.length;
     internos.push(tileInterno('pacientes', IC.pacientes, 'Pacientes', p === 'recepcao' ? 'Cadastro e contato dos pacientes' : 'Cadastro, anamnese e histórico de atendimentos', `<span class="tnum">${n} ${n === 1 ? 'cadastrado' : 'cadastrados'}</span>`));
   }
-  if (ehGestor()) internos.push(tileInterno('admin', IC.admin, 'Administração', 'Usuários, permissões, especialidades e atalhos', '', '#7A5A2E'));
-  if (p === 'paciente') internos.push(tileInterno('meus-dados', IC.ficha, 'Meus dados', 'Seu cadastro na clínica', ''));
+  if (ehGestor()) internos.push(tileInterno('admin', IC.admin, 'Administração', 'Usuários, permissões, salas, especialidades e atalhos', '', '#7A5A2E'));
+  if (p === 'paciente') {
+    internos.push(tileInterno('minhas-consultas', IC.agenda, 'Minhas consultas', 'Dias, horários e salas das suas consultas', '', '#2F68B0'));
+    internos.push(tileInterno('meus-dados', IC.ficha, 'Meus dados', 'Seu cadastro na clínica', ''));
+  }
   const links = S.atalhos.filter(aplicaAtalho);
   const ext = links.map(a => `<a class="tile" href="${esc(safeUrl(a.url))}" target="_blank" rel="noopener noreferrer" style="--tile:${esc(a.cor || '#2E6B5F')}">
       <span class="tile-ext" title="Abre em nova aba">${IC.ext}</span>
@@ -783,15 +987,170 @@ function vPainel() {
 const dominio = (u) => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch (e) { return ''; } };
 
 /* ---------- Agenda ---------- */
+const PXMIN = 1.1;
+const podeMarcar = (profId) => { const p = papel(); return ['mestre', 'admin', 'recepcao'].includes(p) || (p === 'profissional' && (!profId || profId === S.perfil.id)); };
+function agFiltrados() {
+  const { filtro: f, alvo } = S.ag;
+  return S.agenda.filter(a => a.status !== 'cancelado' && (f === 'todos' || !alvo || (f === 'sala' && a.sala_id === alvo) || (f === 'prof' && a.profissional_id === alvo) || (f === 'pac' && a.paciente_id === alvo)));
+}
+function agFaixa(salas) {
+  const at = salas.filter(s => s.ativa !== false);
+  if (!at.length) return [8 * 60, 18 * 60];
+  return [Math.floor(Math.min(...at.map(s => minDe(s.abre))) / 60) * 60, Math.ceil(Math.max(...at.map(s => minDe(s.fecha))) / 60) * 60];
+}
 function vAgenda() {
-  const url = S.cfg.agenda_url;
-  let corpo;
-  if (url && store.mode !== 'demo') corpo = `<div class="cal-frame"><iframe src="${esc(url)}" title="Agenda da clínica" loading="lazy"></iframe></div>
-    <p class="muted small">Não aparece nenhum evento? Entre no Google com a conta que tem acesso à agenda da clínica, ou peça à administração para compartilhá-la com o seu e-mail.</p>`;
-  else if (url) corpo = `<div class="empty">Agenda vinculada. Na versão publicada, a agenda do Google aparece aqui, dentro do painel. A prévia não exibe páginas de outros sites.</div>`;
-  else corpo = `<div class="empty stack" style="gap:8px"><b style="color:var(--ink)">Nenhuma agenda vinculada ainda.</b><span>${ehGestor() ? 'Cole o link de incorporação do Google Agenda em Administração > Configurações.' : 'A administração da clínica ainda não vinculou a agenda.'}</span>${ehGestor() ? `<button class="btn btn-quiet btn-sm" data-act="go" data-v="admin" data-atab="config" style="align-self:flex-start">Vincular agenda</button>` : ''}</div>`;
-  return `${voltar()}<div class="page-head"><div class="stack" style="gap:4px"><h1>Agenda</h1><p class="muted">Agenda compartilhada da clínica.</p></div>
-    <a class="btn btn-quiet" href="https://calendar.google.com/calendar/r" target="_blank" rel="noopener noreferrer">Abrir no Google Agenda ${IC.ext}</a></div>${corpo}`;
+  const ag = S.ag;
+  const salasAt = S.salas.filter(s => s.ativa !== false);
+  const [d0] = agPeriodo();
+  const dias = ag.modo === 'dia' ? [ag.data] : Array.from({ length: 7 }, (_, i) => addDias(d0, i));
+  const titulo = ag.modo === 'dia' ? fmtDiaLongo(ag.data) : `${fmtCurto(dias[0])} a ${fmtCurto(dias[6])}`;
+  const listaAlvo = ag.filtro === 'sala' ? S.salas.map(s => [s.id, s.nome]) : ag.filtro === 'prof' ? S.profs.map(u => [u.id, u.nome + (u.id === S.perfil.id ? ' (você)' : '')]) : ag.filtro === 'pac' ? S.pacientes.map(p => [p.id, p.nome]) : [];
+  const n = agFiltrados().length;
+  const google = S.cfg.agenda_url ? `<button class="btn btn-quiet btn-sm" data-act="ag-google">${ag.google ? 'Ocultar Google Agenda' : 'Ver Google Agenda'}</button>` : '';
+  return `${voltar()}${S.ag.form || S.ag.sel ? '' : msgBox()}
+  <div class="page-head"><div class="stack" style="gap:4px"><h1>Agenda</h1><p class="muted">${salasAt.length ? `${salasAt.length} ${salasAt.length === 1 ? 'sala' : 'salas'}. ${podeMarcar() ? 'Clique num horário livre para marcar.' : ''}` : 'Nenhuma sala cadastrada.'}</p></div>
+    <div class="row">${google}${podeMarcar() && salasAt.length ? `<button class="btn btn-primary" data-act="ag-novo">Nova consulta</button>` : ''}</div></div>
+  <div class="ag-bar">
+    <div class="ag-nav">
+      <button class="ag-icon-btn" data-act="ag-mover" data-n="-1" aria-label="${ag.modo === 'dia' ? 'Dia anterior' : 'Semana anterior'}">${IC.back}</button>
+      <button class="btn btn-quiet btn-sm" data-act="ag-hoje">Hoje</button>
+      <button class="ag-icon-btn" data-act="ag-mover" data-n="1" aria-label="${ag.modo === 'dia' ? 'Próximo dia' : 'Próxima semana'}">${IC.back.replace('M15 18l-6-6 6-6', 'M9 18l6-6-6-6')}</button>
+      <h2>${esc(titulo.charAt(0).toUpperCase() + titulo.slice(1))}</h2>
+    </div>
+    <div class="ag-filtros">
+      <div class="subtabs" role="tablist" aria-label="Período"><button role="tab" aria-selected="${ag.modo === 'dia'}" data-act="ag-modo" data-m="dia">Dia</button><button role="tab" aria-selected="${ag.modo === 'semana'}" data-act="ag-modo" data-m="semana">Semana</button></div>
+      <label class="sr-only" for="ag-filtro">Visão</label>
+      <select id="ag-filtro" data-act-change="ag-filtro"><option value="todos" ${ag.filtro === 'todos' ? 'selected' : ''}>Visão de todos</option><option value="sala" ${ag.filtro === 'sala' ? 'selected' : ''}>Por sala</option><option value="prof" ${ag.filtro === 'prof' ? 'selected' : ''}>Por profissional</option><option value="pac" ${ag.filtro === 'pac' ? 'selected' : ''}>Por paciente</option></select>
+      ${ag.filtro !== 'todos' ? `<label class="sr-only" for="ag-alvo">Escolha</label><select id="ag-alvo" data-act-change="ag-alvo"><option value="">Escolha…</option>${listaAlvo.map(([id, nm]) => `<option value="${esc(id)}" ${ag.alvo === id ? 'selected' : ''}>${esc(nm)}</option>`).join('')}</select>` : ''}
+    </div>
+  </div>
+  ${gradeAgenda(dias)}
+  <div class="spread"><div class="ag-legenda">${salasAt.map(s => `<span><span class="dot" style="background:${esc(s.cor)}"></span>${esc(s.nome)}</span>`).join('')}<span><span class="dot st-dot-confirmado"></span>Confirmada</span><span><span class="dot st-dot-realizado"></span>Realizada</span><span><span class="dot st-dot-faltou"></span>Faltou</span></div>
+    <span class="faint small tnum">${n} ${n === 1 ? 'consulta' : 'consultas'} no período</span></div>
+  ${ag.google && S.cfg.agenda_url ? (store.mode === 'demo' ? `<div class="empty">Na versão publicada, a Google Agenda vinculada aparece aqui. A prévia não exibe páginas de outros sites.</div>` : `<div class="cal-frame"><iframe src="${esc(S.cfg.agenda_url)}" title="Google Agenda da clínica" loading="lazy"></iframe></div>`) : ''}`;
+}
+function gradeAgenda(dias) {
+  const ag = S.ag;
+  const salasAt = S.salas.filter(s => s.ativa !== false);
+  if (!salasAt.length) return `<div class="empty">${ehGestor() ? 'Cadastre as salas em Administração > Salas para começar a marcar consultas.' : 'A administração ainda não cadastrou as salas.'}</div>`;
+  const [ini, fim] = agFaixa(salasAt);
+  const salaFiltro = ag.filtro === 'sala' && ag.alvo ? S.salas.find(s => s.id === ag.alvo) : null;
+  let cols;
+  if (ag.modo === 'dia') {
+    const lista = salaFiltro ? [salaFiltro] : salasAt;
+    cols = lista.map(s => ({ date: dias[0], sala: s, label: `<span class="dot" style="background:${esc(s.cor)}"></span>${esc(s.nome)}`, sub: salaAbre(s, dias[0]) ? `${s.abre} às ${s.fecha}` : 'Fechada neste dia' }));
+  } else {
+    cols = dias.map(d => ({ date: d, sala: salaFiltro, label: `${DIAS[dowDe(d)]} ${Number(d.slice(8))}`, sub: fmtCurto(d), hoje: d === hojeISO() }));
+  }
+  const evs = agFiltrados();
+  const marca = podeMarcar();
+  const horas = []; for (let m = ini; m <= fim; m += 60) horas.push(m);
+  const colHtml = cols.map(c => {
+    const lista = evs.filter(a => sp(a.inicio).date === c.date && (!c.sala || a.sala_id === c.sala.id)).map(a => ({ a, i: sp(a.inicio).min, f: sp(a.fim).min }));
+    lista.sort((x, y) => x.i - y.i);
+    const fimLane = []; lista.forEach(e => { let l = fimLane.findIndex(t => t <= e.i); if (l < 0) { l = fimLane.length; fimLane.push(0); } fimLane[l] = e.f; e.l = l; });
+    const nl = Math.max(1, fimLane.length);
+    let off = '';
+    const salasDia = c.sala ? [c.sala] : salasAt;
+    const abertas = salasDia.filter(s => salaAbre(s, c.date));
+    if (!abertas.length) off = `<div class="ag-off" style="top:0;bottom:0"></div><div class="ag-off-txt">Fechada</div>`;
+    else {
+      const a0 = Math.min(...abertas.map(s => minDe(s.abre))), f0 = Math.max(...abertas.map(s => minDe(s.fecha)));
+      if (a0 > ini) off += `<div class="ag-off" style="top:0;height:${(a0 - ini) * PXMIN}px"></div>`;
+      if (f0 < fim) off += `<div class="ag-off" style="top:${(f0 - ini) * PXMIN}px;bottom:0"></div>`;
+    }
+    const blocos = lista.map(({ a, i, f, l }) => {
+      const sub = ag.modo === 'dia' ? a.profissional : `${a.sala} · ${primeiroNome(a.profissional)}`;
+      return `<button class="ag-ev st-${esc(a.status)}" data-act="ag-sel" data-id="${esc(a.id)}" style="--evc:${esc(a.cor)};top:${(i - ini) * PXMIN + 1}px;height:${Math.max(22, (f - i) * PXMIN - 3)}px;left:calc(${(l / nl) * 100}% + 3px);width:calc(${100 / nl}% - 6px)" title="${esc(`${hm(i)}–${hm(f)} · ${a.paciente} · ${a.profissional} · ${a.sala} · ${STATUS[a.status]?.t || a.status}`)}">
+        ${['confirmado', 'realizado', 'faltou'].includes(a.status) ? `<i class="ag-st st-dot-${a.status}"></i>` : ''}<b>${hm(i)} ${esc(a.paciente)}</b>${(f - i) * PXMIN > 34 ? `<span>${esc(sub)}</span>` : ''}</button>`;
+    }).join('');
+    return `<div class="ag-col ${marca && abertas.length ? 'marca' : ''}" ${marca && abertas.length ? 'data-act="ag-slot"' : ''} data-date="${c.date}" data-sala="${esc(c.sala?.id || '')}" data-ini="${ini}">${off}${blocos}</div>`;
+  }).join('');
+  const colw = ag.modo === 'dia' ? '150px' : '118px';
+  return `<div class="ag-scroll"><div class="ag-grid" style="--cols:${cols.length};--colw:${colw};--h:${(fim - ini) * PXMIN}px;--hora:${60 * PXMIN}px">
+    <div class="ag-corner"></div>${cols.map(c => `<div class="ag-hd ${c.hoje ? 'hoje' : ''}"><b>${c.label}</b><span>${esc(c.sub)}</span></div>`).join('')}
+    <div class="ag-times">${horas.map(m => `<span style="top:${(m - ini) * PXMIN}px">${hm(m)}</span>`).join('')}</div>${colHtml}
+  </div></div>`;
+}
+function novoAgForm(extra = {}) {
+  const ag = S.ag;
+  const f = { id: null, paciente_id: '', profissional_id: '', sala_id: '', data: ag.modo === 'dia' ? ag.data : (ag.data < hojeISO() ? ag.data : hojeISO()), ini: 9 * 60, dur: 60, status: 'agendado', observacao: '' };
+  if (ag.filtro === 'sala' && ag.alvo) f.sala_id = ag.alvo;
+  if (ag.filtro === 'prof' && ag.alvo) f.profissional_id = ag.alvo;
+  if (ag.filtro === 'pac' && ag.alvo) f.paciente_id = ag.alvo;
+  if (papel() === 'profissional') f.profissional_id = S.perfil.id;
+  Object.assign(f, extra);
+  if (!f.sala_id) f.sala_id = (S.salas.find(s => salaAbre(s, f.data)) || S.salas.find(s => s.ativa !== false) || {}).id || '';
+  return f;
+}
+function vAgForm() {
+  const f = S.ag.form; if (!f) return '';
+  const sala = S.salas.find(s => s.id === f.sala_id);
+  const profFixo = papel() === 'profissional';
+  const tempos = []; if (sala) for (let m = minDe(sala.abre); m <= minDe(sala.fecha) - 15; m += 15) tempos.push(m);
+  if (f.id && !tempos.includes(Number(f.ini))) tempos.unshift(Number(f.ini));
+  const aberta = salaAbre(sala, f.data);
+  const iniIso = isoSP(f.data, Number(f.ini)), fimIso = isoSP(f.data, Number(f.ini) + Number(f.dur));
+  const choques = S.agenda.filter(b => b.id !== f.id && b.status !== 'cancelado' && b.inicio < fimIso && iniIso < b.fim && (b.sala_id === f.sala_id || (f.profissional_id && b.profissional_id === f.profissional_id)));
+  const aviso = !sala ? '' : !aberta ? `A sala ${sala.nome} não funciona às ${DIAS_LONGO[dowDe(f.data)]}s.` : Number(f.ini) + Number(f.dur) > minDe(sala.fecha) ? `Termina depois do fechamento da sala (${sala.fecha}).` : choques.length ? `Conflito com ${choques.map(b => `${b.paciente} (${hm(sp(b.inicio).min)}–${hm(sp(b.fim).min)}, ${b.sala_id === f.sala_id ? 'mesma sala' : 'mesmo profissional'})`).join('; ')}.` : '';
+  const profs = S.profs.length ? S.profs : [];
+  return `<div class="modal" role="dialog" aria-modal="true" aria-labelledby="agf-t"><div class="modal-card"><form class="stack" data-form="agendamento" novalidate>
+    <div class="modal-head"><h2 id="agf-t">${f.id ? 'Editar consulta' : 'Nova consulta'}</h2><button type="button" class="btn-ghost btn-sm" data-act="ag-fechar">Fechar</button></div>
+    <div class="grid-2">
+      <div class="field span-2"><label for="agf-pac">Paciente</label><select id="agf-pac" name="paciente_id" required data-autofocus><option value="">Escolha o paciente…</option>${S.pacientes.map(p => `<option value="${esc(p.id)}" ${f.paciente_id === p.id ? 'selected' : ''}>${esc(p.nome)}</option>`).join('')}</select>
+        <span class="hint">Paciente novo? <button type="button" class="btn-ghost btn-sm" data-act="novo-pac" style="min-height:28px;padding:0 4px">Cadastrar paciente</button></span></div>
+      <div class="field"><label for="agf-prof">Profissional</label><select id="agf-prof" name="profissional_id" ${profFixo ? 'disabled' : ''} required><option value="">Escolha…</option>${profs.map(u => `<option value="${esc(u.id)}" ${f.profissional_id === u.id ? 'selected' : ''}>${esc(u.nome)}</option>`).join('')}</select>${profFixo ? '<span class="hint">Você marca na sua própria agenda.</span>' : ''}</div>
+      <div class="field"><label for="agf-sala">Sala</label><select id="agf-sala" name="sala_id" required>${S.salas.filter(s => s.ativa !== false || s.id === f.sala_id).map(s => `<option value="${esc(s.id)}" ${f.sala_id === s.id ? 'selected' : ''}>${esc(s.nome)}</option>`).join('')}</select></div>
+      <div class="field"><label for="agf-data">Data</label><input id="agf-data" name="data" type="date" value="${esc(f.data)}" required></div>
+      <div class="field"><label for="agf-ini">Início</label><select id="agf-ini" name="ini">${tempos.map(m => `<option value="${m}" ${Number(f.ini) === m ? 'selected' : ''}>${hm(m)}</option>`).join('')}</select></div>
+      <div class="field"><label for="agf-dur">Duração</label><select id="agf-dur" name="dur">${DURACOES.concat(DURACOES.includes(Number(f.dur)) ? [] : [Number(f.dur)]).map(d => `<option value="${d}" ${Number(f.dur) === d ? 'selected' : ''}>${d} min</option>`).join('')}</select><span class="hint tnum">Termina às ${hm(Number(f.ini) + Number(f.dur))}</span></div>
+      ${f.id ? `<div class="field"><label for="agf-st">Situação</label><select id="agf-st" name="status">${Object.entries(STATUS).map(([k, v]) => `<option value="${k}" ${f.status === k ? 'selected' : ''}>${v.t}</option>`).join('')}</select></div>` : ''}
+      <div class="field span-2"><label for="agf-obs">Observação</label><textarea id="agf-obs" name="observacao" rows="2" placeholder="Informação para a equipe (ex.: primeira consulta, vem com responsável)">${esc(f.observacao || '')}</textarea></div>
+    </div>
+    ${aviso ? `<div class="msg msg-err" role="status">${esc(aviso)}</div>` : ''}
+    ${S.msg && S.ag.form ? msgBox() : ''}
+    <div class="row"><button class="btn btn-primary" type="submit" ${S.busy ? 'disabled' : ''}>${f.id ? 'Salvar alterações' : 'Marcar consulta'}</button><button class="btn btn-quiet" type="button" data-act="ag-fechar">Cancelar</button></div>
+  </form></div></div>`;
+}
+function vAgDetalhe() {
+  const a = S.ag.sel && S.agenda.find(x => x.id === S.ag.sel); if (!a) return '';
+  const i = sp(a.inicio), f = sp(a.fim);
+  const pode = podeMarcar(a.profissional_id);
+  const st = STATUS[a.status] || { t: a.status, c: '' };
+  const botoes = pode && a.status !== 'cancelado' ? [
+    a.status === 'agendado' ? `<button class="btn btn-quiet btn-sm" data-act="ag-status" data-st="confirmado">Confirmar</button>` : '',
+    a.status !== 'realizado' ? `<button class="btn btn-quiet btn-sm" data-act="ag-status" data-st="realizado">Marcar como realizada</button>` : '',
+    a.status !== 'faltou' ? `<button class="btn btn-quiet btn-sm" data-act="ag-status" data-st="faltou">Paciente faltou</button>` : '',
+    `<button class="btn btn-quiet btn-sm" data-act="ag-editar">Editar</button>`,
+    S.ag.confirmCancel ? `<span class="confirm">Cancelar esta consulta? <button class="btn btn-danger btn-sm" data-act="ag-status" data-st="cancelado">Cancelar consulta</button><button class="btn-ghost btn-sm" data-act="ag-cancel-nao">Manter</button></span>` : `<button class="btn btn-quiet btn-sm" data-act="ag-cancel-ask">Cancelar consulta</button>`
+  ].join('') : '';
+  return `<div class="modal" role="dialog" aria-modal="true" aria-labelledby="agd-t"><div class="modal-card stack">
+    <div class="modal-head"><div class="stack" style="gap:6px"><span class="chip ${st.c}" style="align-self:flex-start">${esc(st.t)}</span><h2 id="agd-t">${esc(a.paciente)}</h2></div><button class="btn-ghost btn-sm" data-act="ag-fechar">Fechar</button></div>
+    <dl class="dl">
+      <div><dt>Quando</dt><dd class="tnum">${esc(fmtDiaLongo(i.date))}, ${hm(i.min)} às ${hm(f.min)}</dd></div>
+      <div><dt>Profissional</dt><dd>${esc(a.profissional)}</dd></div>
+      <div><dt>Sala</dt><dd><span class="dot" style="background:${esc(a.cor)}"></span> ${esc(a.sala)}</dd></div>
+      ${a.observacao ? `<div><dt>Observação</dt><dd>${esc(a.observacao)}</dd></div>` : ''}
+    </dl>
+    ${S.msg && S.ag.sel ? msgBox() : ''}
+    ${botoes ? `<div class="row" style="gap:8px">${botoes}</div>` : (!pode ? '<p class="faint small">Somente a recepção, a administração e o próprio profissional alteram esta consulta.</p>' : '')}
+    <div class="row"><button class="btn btn-primary btn-sm" data-act="abrir-pac" data-id="${esc(a.paciente_id)}">Abrir ficha do paciente</button></div>
+  </div></div>`;
+}
+function vListaConsultas(lista, { comPaciente = false, comFicha = false } = {}) {
+  const agora = new Date().toISOString();
+  const prox = lista.filter(a => a.fim >= agora && a.status !== 'cancelado').sort((a, b) => a.inicio.localeCompare(b.inicio));
+  const ant = lista.filter(a => !(a.fim >= agora && a.status !== 'cancelado')).sort((a, b) => b.inicio.localeCompare(a.inicio));
+  const linha = (a) => { const i = sp(a.inicio), f = sp(a.fim); const st = STATUS[a.status] || { t: a.status, c: '' }; return `<div class="cons">
+    <div class="d tnum">${fmtData(i.date)}<span>${DIAS[dowDe(i.date)]}</span></div>
+    <div class="h tnum muted">${hm(i.min)}–${hm(f.min)}</div>
+    <div style="min-width:0">${comPaciente ? `<b>${esc(a.paciente)}</b><br>` : ''}<span class="small muted">${esc(a.sala)} · ${esc(a.profissional)}</span></div>
+    <span class="chip ${st.c}">${esc(st.t)}</span></div>`; };
+  return `<div class="stack" style="gap:10px"><h3>Próximas</h3>${prox.length ? `<div class="consultas">${prox.map(linha).join('')}</div>` : '<div class="empty">Nenhuma consulta marcada.</div>'}</div>
+    ${ant.length ? `<div class="stack" style="gap:10px"><h3>Anteriores</h3><div class="consultas">${ant.slice(0, 30).map(linha).join('')}</div></div>` : ''}`;
+}
+function vMinhasConsultas() {
+  return `${voltar()}${msgBox()}<div class="stack" style="gap:4px"><h1>Minhas consultas</h1><p class="muted">Para marcar, remarcar ou cancelar, fale com a recepção da clínica.</p></div>${vListaConsultas(S.consultas)}`;
 }
 
 /* ---------- Pacientes ---------- */
@@ -847,6 +1206,7 @@ function vPaciente() {
   if (S.ptab === 'cadastro') {
     corpo = `<dl class="dl">${CAMPOS_PACIENTE.map(([k, t]) => `<div><dt>${t}</dt><dd>${k === 'nascimento' ? (p[k] ? fmtData(p[k]) + (i !== null ? ` · ${i} anos` : '') : '—') : esc(p[k] || '—')}</dd></div>`).join('')}
       <div><dt>Acesso do paciente</dt><dd>${p.user_id ? '<span class="chip chip-good">Conta vinculada</span>' : p.email ? 'Sem conta ainda. O paciente cria o acesso com o e-mail cadastrado.' : 'Sem e-mail cadastrado.'}</dd></div></dl>
+      <section class="stack" style="gap:12px;margin-top:8px"><div class="spread"><h2>Consultas</h2>${podeMarcar() ? `<button class="btn btn-quiet btn-sm" data-act="ag-paciente" data-id="${esc(p.id)}">Marcar consulta</button>` : ''}</div>${vListaConsultas(S.consultas)}</section>
       ${!espsVis.length ? `<div class="lock">${IC.lock}<span>As fichas clínicas abrem só para profissionais com permissão na especialidade. ${ehGestor() ? 'Você define as permissões, inclusive as suas, em Administração > Usuários.' : ''}</span></div>` : ''}`;
   } else {
     const esp = S.esps.find(e => e.id === S.ptab);
@@ -904,8 +1264,8 @@ function vMeusDados() {
 
 /* ---------- Administração ---------- */
 function vAdmin() {
-  const tabs = [['usuarios', 'Usuários'], ['especialidades', 'Especialidades'], ['atalhos', 'Atalhos'], ['config', 'Configurações'], ['auditoria', 'Auditoria']];
-  const corpo = { usuarios: aUsuarios, especialidades: aEsps, atalhos: aAtalhos, config: aConfig, auditoria: aAuditoria }[S.atab]();
+  const tabs = [['usuarios', 'Usuários'], ['salas', 'Salas'], ['especialidades', 'Especialidades'], ['atalhos', 'Atalhos'], ['config', 'Configurações'], ['auditoria', 'Auditoria']];
+  const corpo = { usuarios: aUsuarios, salas: aSalas, especialidades: aEsps, atalhos: aAtalhos, config: aConfig, auditoria: aAuditoria }[S.atab]();
   return `${voltar()}<div class="stack" style="gap:4px"><h1>Administração</h1><p class="muted">Quem acessa o quê na clínica.</p></div>
   <div class="tabs" role="tablist" aria-label="Administração">${tabs.map(([k, t]) => `<button role="tab" aria-selected="${S.atab === k}" data-act="atab" data-t="${k}">${t}</button>`).join('')}</div>
   ${msgBox()}<section class="stack">${corpo}</section>`;
@@ -940,6 +1300,20 @@ function aUsuarios() {
       <div class="row"><button class="btn btn-primary btn-sm" type="submit" ${permsTravadas && travado ? 'disabled' : ''}>Salvar</button></div>
     </form>`;
   }).join('')}`;
+}
+function aSalas() {
+  const ordemDias = [1, 2, 3, 4, 5, 6, 0];
+  const card = (s) => { const k = esc(s?.id || 'nova'); const dias = (s?.dias || [1, 2, 3, 4, 5]).map(Number); return `<form class="card stack" data-form="sala" data-id="${esc(s?.id || '')}" novalidate>
+      ${s ? '' : '<h3>Nova sala</h3>'}
+      <div class="grid-3">
+        <div class="field span-2"><label for="sl-n-${k}">Nome</label><input id="sl-n-${k}" name="nome" type="text" value="${esc(s?.nome || '')}" required></div>
+        <div class="field"><label for="sl-c-${k}">Cor na agenda</label><div class="row" style="gap:10px"><input id="sl-c-${k}" name="cor" type="color" value="${esc(s?.cor || '#2E6B5F')}"><label class="check"><input type="checkbox" name="ativa" ${!s || s.ativa !== false ? 'checked' : ''}> Ativa</label></div></div>
+        <fieldset class="field span-3" style="border:0;padding:0;margin:0"><legend class="lbl" style="margin-bottom:6px">Dias de funcionamento</legend><div class="dias-sem">${ordemDias.map(d => `<label class="check"><input type="checkbox" name="dias" value="${d}" ${dias.includes(d) ? 'checked' : ''}> ${DIAS[d]}</label>`).join('')}</div></fieldset>
+        <div class="field"><label for="sl-a-${k}">Abre às</label><input id="sl-a-${k}" name="abre" type="time" step="900" value="${esc((s?.abre || '08:00').slice(0, 5))}" required></div>
+        <div class="field"><label for="sl-f-${k}">Fecha às</label><input id="sl-f-${k}" name="fecha" type="time" step="900" value="${esc((s?.fecha || '18:00').slice(0, 5))}" required></div>
+      </div>
+      <div class="row"><button class="btn ${s ? 'btn-quiet' : 'btn-primary'} btn-sm" type="submit">${s ? 'Salvar' : 'Adicionar sala'}</button></div></form>`; };
+  return `<p class="muted">As consultas só podem ser marcadas nos dias e horários de funcionamento de cada sala. Uma sala não recebe duas consultas no mesmo horário.</p>${S.salas.map(card).join('')}${card(null)}`;
 }
 function aEsps() {
   const card = (e) => `<form class="card stack" data-form="esp" data-id="${esc(e?.id || '')}" novalidate>
@@ -981,7 +1355,7 @@ function aConfig() {
   return `<form class="card stack" data-form="cfg-nome" novalidate><h3>Nome da clínica</h3>
     <div class="field" style="max-width:460px"><label for="cf-nome">Nome exibido no topo e na tela de entrada</label><input id="cf-nome" name="nome" type="text" value="${esc(nomeClinica())}" required></div>
     <div class="row"><button class="btn btn-quiet btn-sm" type="submit">Salvar nome</button></div></form>
-  <form class="card stack" data-form="cfg-agenda" novalidate><h3>Agenda compartilhada (Google Agenda)</h3>
+  <form class="card stack" data-form="cfg-agenda" novalidate><h3>Google Agenda (opcional)</h3><p class="muted small">A agenda da clínica funciona aqui no painel. Se quiser, vincule também uma Google Agenda para consulta na tela da Agenda.</p>
     <ol class="steps"><li>Abra o Google Agenda no computador, com a conta dona da agenda da clínica.</li><li>Em Configurações, escolha a agenda da clínica em “Configurações das minhas agendas”.</li><li>Na seção “Integrar agenda”, copie o código de incorporação.</li><li>Cole aqui e salve.</li></ol>
     <div class="field"><label for="cf-ag">Código de incorporação ou link</label><textarea id="cf-ag" name="agenda" rows="3" placeholder="&lt;iframe src=&quot;https://calendar.google.com/calendar/embed?src=…&quot;…">${esc(S.cfg.agenda_url || '')}</textarea>
       <span class="hint">Os eventos aparecem para quem estiver conectado ao Google com uma conta que tenha acesso à agenda. Compartilhe a agenda no Google com o e-mail de cada pessoa da equipe.</span></div>
@@ -1019,8 +1393,35 @@ document.addEventListener('click', async (ev) => {
   else if (act === 'auth-tab') { S.authTab = t.dataset.t; S.authMsg = null; render(); }
   else if (act === 'demo-entrar') { await store.signInAs(t.dataset.id); location.hash = ''; await aposLogin(); }
   else if (act === 'demo-reset') { await store.reset(); S.authMsg = { ok: true, t: 'Dados de exemplo restaurados.' }; render(); }
-  else if (act === 'novo-pac') { S.pform = {}; go('paciente-form'); }
-  else if (act === 'abrir-pac') { S.pid = t.dataset.id; S.ptab = 'cadastro'; S.psub = 'anamnese'; go('paciente'); }
+  else if (act === 'novo-pac') { S.ag.form = null; S.ag.sel = null; S.pform = {}; go('paciente-form'); }
+  else if (act === 'abrir-pac') { S.ag.sel = null; S.ag.form = null; S.pid = t.dataset.id; S.ptab = 'cadastro'; S.psub = 'anamnese'; go('paciente'); }
+  else if (act === 'ag-mover') { const n = Number(t.dataset.n) * (S.ag.modo === 'dia' ? 1 : 7); S.ag.data = addDias(S.ag.data, n); S.msg = null; await carregarAgenda().catch(e => { S.msg = { err: true, t: e.message }; }); render(); }
+  else if (act === 'ag-hoje') { S.ag.data = hojeISO(); S.msg = null; await carregarAgenda().catch(() => {}); render(); }
+  else if (act === 'ag-modo') { S.ag.modo = t.dataset.m; S.msg = null; await carregarAgenda().catch(() => {}); render(); }
+  else if (act === 'ag-google') { S.ag.google = !S.ag.google; render(); }
+  else if (act === 'ag-novo') { S.msg = null; S.ag.sel = null; S.ag.form = novoAgForm(); render(); }
+  else if (act === 'ag-slot') {
+    const r = t.getBoundingClientRect(); const ini = Number(t.dataset.ini);
+    const min = ini + Math.floor((ev.clientY - r.top) / PXMIN / 15) * 15;
+    const extra = { data: t.dataset.date, ini: min };
+    if (t.dataset.sala) extra.sala_id = t.dataset.sala;
+    else { const s = S.salas.find(x => salaAbre(x, t.dataset.date) && min >= minDe(x.abre) && min < minDe(x.fecha) && !S.agenda.some(a => a.sala_id === x.id && a.status !== 'cancelado' && a.inicio < isoSP(t.dataset.date, min + 60) && isoSP(t.dataset.date, min) < a.fim)); if (s) extra.sala_id = s.id; }
+    S.msg = null; S.ag.sel = null; S.ag.form = novoAgForm(extra); render();
+  }
+  else if (act === 'ag-sel') { S.msg = null; S.ag.form = null; S.ag.confirmCancel = false; S.ag.sel = t.dataset.id; render(); }
+  else if (act === 'ag-fechar') { S.ag.form = null; S.ag.sel = null; S.msg = null; render(); }
+  else if (act === 'ag-editar') { const a = S.agenda.find(x => x.id === S.ag.sel); if (a) { const i = sp(a.inicio), f = sp(a.fim); S.ag.form = { id: a.id, paciente_id: a.paciente_id, profissional_id: a.profissional_id, sala_id: a.sala_id, data: i.date, ini: i.min, dur: f.min - i.min, status: a.status, observacao: a.observacao || '' }; S.ag.sel = null; S.msg = null; render(); } }
+  else if (act === 'ag-cancel-ask') { S.ag.confirmCancel = true; render(); }
+  else if (act === 'ag-cancel-nao') { S.ag.confirmCancel = false; render(); }
+  else if (act === 'ag-status') {
+    const a = S.agenda.find(x => x.id === S.ag.sel); if (!a) return;
+    await tentar(() => store.salvarAgendamento({ ...a, status: t.dataset.st }), `Consulta: ${STATUS[t.dataset.st].t.toLowerCase()}.`);
+    S.ag.confirmCancel = false;
+    await carregarAgenda().catch(() => {});
+    if (!S.msg?.err) { S.ag.sel = t.dataset.st === 'cancelado' ? null : S.ag.sel; }
+    render();
+  }
+  else if (act === 'ag-paciente') { S.ag.filtro = 'pac'; S.ag.alvo = t.dataset.id; S.ag.form = null; S.ag.sel = null; go('agenda'); }
   else if (act === 'editar-pac') { S.pform = { ...S.pac }; go('paciente-form'); }
   else if (act === 'ptab') { S.ptab = t.dataset.t; S.psub = 'anamnese'; S.msg = null; try { await carregarFicha(); } catch (e) { S.msg = { err: true, t: e.message }; } render(); }
   else if (act === 'psub') { S.psub = t.dataset.t; S.editAt = null; S.msg = null; render(); }
@@ -1041,8 +1442,21 @@ document.addEventListener('input', (ev) => {
 document.addEventListener('change', (ev) => {
   const a = ev.target.dataset.actChange;
   if (a === 'papel-muda') { const box = ev.target.closest('form').querySelector('.perm-box'); if (box) box.hidden = !CLINICOS.includes(ev.target.value); }
+  if (a === 'ag-filtro') { S.ag.filtro = ev.target.value; S.ag.alvo = S.ag.filtro === 'prof' && CLINICOS.includes(papel()) ? S.perfil.id : ''; render(); return; }
+  if (a === 'ag-alvo') { S.ag.alvo = ev.target.value; render(); return; }
+  const fa = ev.target.closest('form[data-form="agendamento"]');
+  if (fa && ['sala_id', 'data', 'ini', 'dur', 'profissional_id'].includes(ev.target.name)) { S.ag.form = { ...S.ag.form, ...lerAgForm(fa) }; render(); return; }
   if (a === 'alvo-muda') { const box = ev.target.closest('form').querySelector('.pessoas'); if (box) box.hidden = ev.target.value !== 'selecionados'; }
 });
+
+function lerAgForm(f) {
+  const fd = new FormData(f);
+  const o = {};
+  for (const k of ['paciente_id', 'profissional_id', 'sala_id', 'data', 'ini', 'dur', 'status', 'observacao']) if (fd.has(k)) o[k] = String(fd.get(k));
+  if ('ini' in o) o.ini = Number(o.ini); if ('dur' in o) o.dur = Number(o.dur);
+  return o;
+}
+document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape' && (S.ag.form || S.ag.sel)) { S.ag.form = null; S.ag.sel = null; S.msg = null; render(); } });
 
 document.addEventListener('submit', async (ev) => {
   const f = ev.target.closest('form[data-form]'); if (!f) return;
@@ -1108,6 +1522,26 @@ document.addEventListener('submit', async (ev) => {
       else if (!CLINICOS.includes(np) && Object.keys(u.permissoes).length) await store.definirPermissoes(id, []);
     }, `Acesso de ${u.nome} atualizado.`);
     S.usuarios = await store.usuarios(); if (self) S.perfil = await store.perfil(); render();
+  }
+  else if (kind === 'agendamento') {
+    const f0 = { ...S.ag.form, ...lerAgForm(f) };
+    S.ag.form = f0;
+    if (!f0.paciente_id || !f0.profissional_id || !f0.sala_id || !f0.data) { S.msg = { err: true, t: 'Escolha paciente, profissional, sala e data.' }; return render(); }
+    const a = { id: f0.id || undefined, paciente_id: f0.paciente_id, profissional_id: f0.profissional_id, sala_id: f0.sala_id, inicio: isoSP(f0.data, f0.ini), fim: isoSP(f0.data, f0.ini + f0.dur), status: f0.status || 'agendado', observacao: (f0.observacao || '').trim() };
+    await tentar(() => store.salvarAgendamento(a), a.id ? 'Consulta atualizada.' : 'Consulta marcada.');
+    if (!S.msg?.err) {
+      S.ag.form = null;
+      if (S.ag.modo === 'dia' || f0.data < agPeriodo()[0] || f0.data >= agPeriodo()[1]) S.ag.data = f0.data;
+      await carregarAgenda().catch(() => {});
+    }
+    render();
+  }
+  else if (kind === 'sala') {
+    const dias = fd.getAll('dias').map(Number);
+    if (!val('nome') || !dias.length || !val('abre') || !val('fecha')) { S.msg = { err: true, t: 'Informe o nome, pelo menos um dia e o horário da sala.' }; return render(); }
+    const sl = { id: f.dataset.id || undefined, nome: val('nome'), cor: val('cor') || '#2E6B5F', dias, abre: val('abre').slice(0, 5), fecha: val('fecha').slice(0, 5), ativa: fd.get('ativa') === 'on' };
+    await tentar(() => store.salvarSala(sl), sl.id ? 'Sala salva.' : 'Sala adicionada.');
+    S.salas = await store.salas(); render();
   }
   else if (kind === 'esp') {
     if (!val('nome')) { S.msg = { err: true, t: 'Informe o nome da especialidade.' }; return render(); }
