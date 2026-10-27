@@ -271,6 +271,10 @@ ol.steps { margin: 0; padding-left: 20px; display: flex; flex-direction: column;
 .ajuda-app { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 @media (max-width: 640px) { .ajuda-app { grid-template-columns: 1fr; } }
 .ajuda-app ol { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 4px; color: var(--ink-2); font-size: 15px; }
+.site-foot { border-top: 1px solid var(--line); background: var(--surface); }
+.site-foot .wrap { display: flex; align-items: center; gap: 18px; padding-block: 24px calc(32px + env(safe-area-inset-bottom, 0px)); }
+.foot-logo { width: 48px; height: auto; flex: none; display: block; }
+.foot-text { display: grid; gap: 4px; font-size: 13px; color: var(--ink-3); min-width: 0; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .confirm { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 10px 12px; border-radius: var(--r-sm); background: var(--crit-tint); color: var(--crit); font-weight: 700; font-size: 14px; }
 </style>
@@ -756,6 +760,13 @@ const papel = () => (S.perfil && S.perfil.ativo ? S.perfil.papel : null);
 const ehEquipe = () => EQUIPE.includes(papel());
 const ehGestor = () => GESTOR.includes(papel());
 const nivelEm = (eid) => (S.perfil && CLINICOS.includes(papel()) ? S.perfil.permissoes?.[eid] || null : null);
+const AUTOR = 'Luis Henrique Silva';
+const COPYRIGHT = `© ${new Date().getFullYear()} ${AUTOR}. Todos os direitos reservados.`;
+function vRodape() {
+  return `<footer class="site-foot"><div class="wrap">
+    <picture><source srcset="brand/logo-claro-240.png" media="(prefers-color-scheme: dark)"><img src="brand/logo-escuro-240.png" alt="Logo de ${AUTOR}" class="foot-logo" width="48" height="53" onerror="this.closest('picture').hidden=true"></picture>
+    <div class="foot-text"><p>${esc(COPYRIGHT)}</p><p>Proibida a reprodução sem autorização.</p></div></div></footer>`;
+}
 const nomeClinica = () => (typeof S.cfg.nome_clinica === 'string' && S.cfg.nome_clinica.trim()) || CONFIG.nomeClinica || 'Clínica';
 
 /* ============================== ÍCONES ============================== */
@@ -856,7 +867,7 @@ function render() {
   else if (!S.perfil.ativo) body = vBloqueado('Acesso desativado', 'O seu acesso foi desativado pela administração da clínica. Se acha que isso é um engano, fale com a recepção.');
   else if (papel() === 'pendente') body = vBloqueado('Seu acesso está aguardando liberação', 'A conta foi criada. A administração da clínica precisa definir o seu perfil antes do primeiro acesso. Se você é paciente, peça à recepção para cadastrar o seu e-mail na sua ficha; a liberação é automática.');
   else body = ({ painel: vPainel, agenda: vAgenda, pacientes: vPacientes, 'paciente-form': vPacienteForm, paciente: vPaciente, admin: vAdmin, 'meus-dados': vMeusDados, 'minhas-consultas': vMinhasConsultas }[S.view] || vPainel)();
-  app.innerHTML = vTopo() + `<main><div class="wrap stack" style="gap:24px">${body}</div></main>` + (S.perfil && S.view === 'agenda' ? vAgForm() + vAgDetalhe() : '');
+  app.innerHTML = vTopo() + `<main><div class="wrap stack" style="gap:24px">${body}</div></main>` + vRodape() + (S.perfil && S.view === 'agenda' ? vAgForm() + vAgDetalhe() : '');
   syncBarraInstalar();
   const f = app.querySelector('[data-autofocus]'); if (f) f.focus();
   app.querySelectorAll('.tabs [aria-selected="true"]').forEach(b => { const t = b.parentElement; t.scrollLeft = Math.max(0, b.offsetLeft - t.offsetLeft - 16); });
