@@ -1,0 +1,1155 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#2E6B5F">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<script src="config.js"></script>
+<title>Painel da Clínica</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600&family=Nunito+Sans:opsz,wght@6..12,400;6..12,600;6..12,700;6..12,800&display=swap">
+<style>
+/* Layout: barra superior fixa + coluna de trabalho (máx. 1120px). Painel em grade de botões; ficha do paciente com abas por especialidade. */
+:root {
+  --bg: #F3F5F3;
+  --surface: #FFFFFF;
+  --surface-2: #EBF0ED;
+  --line: #DAE2DD;
+  --line-2: #C3CEC8;
+  --ink: #1C2925;
+  --ink-2: #4A5953;
+  --ink-3: #66756F;
+  --accent: #2E6B5F;
+  --accent-hover: #25594F;
+  --accent-ink: #FFFFFF;
+  --accent-tint: #E1EEEA;
+  --accent-text: #23574D;
+  --good: #2D7550;
+  --good-tint: #E2F1E8;
+  --warn: #8F5A0E;
+  --warn-tint: #FBF0DC;
+  --crit: #A33D4B;
+  --crit-tint: #F8E4E7;
+  --focus: #2F68B0;
+  --shadow: 0 1px 2px rgba(20, 40, 34, .06), 0 4px 14px rgba(20, 40, 34, .05);
+  --font-display: "Lexend", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Nunito Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --r: 14px;
+  --r-sm: 9px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111816; --surface: #18211E; --surface-2: #202A26; --line: #2C3833; --line-2: #3A4842;
+    --ink: #E5EDE9; --ink-2: #B0BFB8; --ink-3: #8E9D96;
+    --accent: #6DB5A3; --accent-hover: #83C4B3; --accent-ink: #0C1915; --accent-tint: #1C312B; --accent-text: #8ACDBB;
+    --good: #7CC79C; --good-tint: #1B3326; --warn: #E2B162; --warn-tint: #352915; --crit: #EB8D99; --crit-tint: #3A1E23;
+    --focus: #8DB8EE; --shadow: 0 1px 2px rgba(0, 0, 0, .3);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111816; --surface: #18211E; --surface-2: #202A26; --line: #2C3833; --line-2: #3A4842;
+  --ink: #E5EDE9; --ink-2: #B0BFB8; --ink-3: #8E9D96;
+  --accent: #6DB5A3; --accent-hover: #83C4B3; --accent-ink: #0C1915; --accent-tint: #1C312B; --accent-text: #8ACDBB;
+  --good: #7CC79C; --good-tint: #1B3326; --warn: #E2B162; --warn-tint: #352915; --crit: #EB8D99; --crit-tint: #3A1E23;
+  --focus: #8DB8EE; --shadow: 0 1px 2px rgba(0, 0, 0, .3);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { background: var(--bg); color: var(--ink); }
+body { font-family: var(--font-body); font-size: 16px; line-height: 1.55; -webkit-font-smoothing: antialiased; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30; background: var(--surface); }
+a { color: var(--accent-text); text-underline-offset: 3px; }
+button, input, textarea, select { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+h1, h2, h3 { font-family: var(--font-display); font-weight: 500; letter-spacing: -0.01em; margin: 0; text-wrap: balance; line-height: 1.2; }
+h1 { font-size: clamp(26px, 4vw, 34px); }
+h2 { font-size: 20px; }
+h3 { font-size: 17px; }
+p { margin: 0; }
+.wrap { width: 100%; max-width: 1120px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.stack { display: flex; flex-direction: column; gap: 16px; }
+.row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.spread { display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.muted { color: var(--ink-2); }
+.faint { color: var(--ink-3); }
+.small { font-size: 14px; }
+.tnum { font-variant-numeric: tabular-nums; }
+.eyebrow { font-size: 12px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--accent-text); }
+.h-sec { font-size: 13px; font-family: var(--font-body); font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
+
+/* Barra superior */
+.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--surface); border-bottom: 1px solid var(--line); }
+.top-in { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-block: 10px; }
+.brand { display: flex; align-items: center; gap: 10px; min-height: 44px; color: var(--ink); text-decoration: none; font-family: var(--font-display); font-weight: 500; font-size: 18px; min-width: 0; }
+.brand span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.brand svg { flex: none; }
+.who { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.who-name { font-weight: 700; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 22ch; }
+@media (max-width: 560px) { .who-name { display: none; } }
+.demo-strip { background: var(--warn-tint); color: var(--ink-2); font-size: 14px; border-bottom: 1px solid var(--line); }
+.demo-strip .wrap { padding-block: 8px; }
+
+/* Botões e campos */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 10px 18px; border-radius: var(--r-sm); border: 1px solid transparent; font-weight: 700; font-size: 15px; line-height: 1.2; cursor: pointer; text-decoration: none; transition: background-color .15s ease, border-color .15s ease; }
+.btn-primary { background: var(--accent); color: var(--accent-ink); }
+.btn-primary:hover { background: var(--accent-hover); }
+.btn-quiet { background: var(--surface); border-color: var(--line-2); color: var(--ink); }
+.btn-quiet:hover { background: var(--surface-2); }
+.btn-ghost { background: none; border: 0; color: var(--ink-2); font-weight: 700; min-height: 44px; padding: 8px 12px; border-radius: var(--r-sm); cursor: pointer; }
+.btn-ghost:hover { background: var(--surface-2); color: var(--ink); }
+.btn-danger { background: var(--crit-tint); color: var(--crit); border-color: transparent; }
+.btn-sm { min-height: 38px; padding: 7px 13px; font-size: 14px; }
+.btn[disabled], .btn-ghost[disabled] { opacity: .5; cursor: not-allowed; }
+.back { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; color: var(--ink-2); text-decoration: none; min-height: 40px; }
+.back:hover { color: var(--ink); }
+.field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.field label, .lbl { font-weight: 700; font-size: 14px; }
+.field .hint { font-size: 13px; color: var(--ink-3); }
+input[type=text], input[type=email], input[type=password], input[type=date], input[type=url], input[type=search], input[type=tel], textarea, select {
+  width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid var(--line-2); border-radius: var(--r-sm); background: var(--surface); color: var(--ink);
+}
+textarea { min-height: 88px; resize: vertical; line-height: 1.5; }
+input[type=color] { width: 52px; height: 44px; padding: 3px; border: 1px solid var(--line-2); border-radius: var(--r-sm); background: var(--surface); }
+input:focus, textarea:focus, select:focus { border-color: var(--accent); outline: 2px solid color-mix(in srgb, var(--accent) 30%, transparent); outline-offset: 0; }
+.check { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; font-weight: 600; cursor: pointer; }
+.check input { width: 18px; height: 18px; accent-color: var(--accent); }
+.grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px 16px; }
+.span-2 { grid-column: span 2; }
+.span-3 { grid-column: 1 / -1; }
+@media (max-width: 720px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } .span-2 { grid-column: auto; } }
+
+/* Superfícies e estados */
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 20px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; font-size: 13px; font-weight: 700; background: var(--surface-2); color: var(--ink-2); white-space: nowrap; }
+.chip-accent { background: var(--accent-tint); color: var(--accent-text); }
+.chip-good { background: var(--good-tint); color: var(--good); }
+.chip-warn { background: var(--warn-tint); color: var(--warn); }
+.chip-crit { background: var(--crit-tint); color: var(--crit); }
+.dot { width: 10px; height: 10px; border-radius: 50%; flex: none; display: inline-block; }
+.msg { padding: 12px 14px; border-radius: var(--r-sm); font-weight: 600; font-size: 15px; }
+.msg-ok { background: var(--good-tint); color: var(--good); }
+.msg-err { background: var(--crit-tint); color: var(--crit); }
+.msg-info { background: var(--accent-tint); color: var(--accent-text); }
+.empty { border: 1px dashed var(--line-2); border-radius: var(--r); padding: 22px; color: var(--ink-2); background: var(--surface); }
+main { padding-block: 24px 64px; }
+.page-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px; }
+
+/* Login */
+.login { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 32px; align-items: start; padding-top: 24px; }
+@media (max-width: 860px) { .login { grid-template-columns: 1fr; gap: 20px; padding-top: 4px; } }
+.login-intro { padding-top: 24px; display: flex; flex-direction: column; gap: 16px; max-width: 46ch; }
+.login-intro h1 { font-size: clamp(30px, 5vw, 44px); }
+.login-list { display: flex; flex-direction: column; gap: 10px; margin: 8px 0 0; padding: 0; list-style: none; }
+.login-list li { display: flex; gap: 10px; align-items: baseline; color: var(--ink-2); }
+.login-list li::before { content: ""; width: 7px; height: 7px; border-radius: 2px; background: var(--accent); flex: none; transform: translateY(-2px); }
+.seg { display: flex; gap: 4px; padding: 4px; background: var(--surface-2); border-radius: 11px; }
+.seg button { flex: 1; min-height: 40px; border: 0; border-radius: 8px; background: none; font-weight: 700; color: var(--ink-2); cursor: pointer; }
+.seg button[aria-selected="true"] { background: var(--surface); color: var(--ink); box-shadow: var(--shadow); }
+.demo-users { display: grid; gap: 8px; }
+.demo-user { display: flex; justify-content: space-between; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 10px 14px; min-height: 52px; border-radius: var(--r-sm); border: 1px solid var(--line); background: var(--surface); cursor: pointer; }
+.demo-user:hover { border-color: var(--accent); }
+.demo-user b { display: block; font-size: 15px; }
+.demo-user span { font-size: 13px; color: var(--ink-3); }
+
+/* Painel */
+.hello { display: flex; flex-direction: column; gap: 6px; padding-block: 8px 4px; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
+.tile { position: relative; display: flex; flex-direction: column; gap: 14px; padding: 18px; min-height: 150px; border-radius: var(--r); background: var(--surface); border: 1px solid var(--line); color: var(--ink); text-decoration: none; text-align: left; cursor: pointer; transition: border-color .15s ease, transform .15s ease, box-shadow .15s ease; }
+.tile:hover { border-color: var(--tile, var(--accent)); box-shadow: var(--shadow); transform: translateY(-1px); }
+.tile-icon { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; background: color-mix(in srgb, var(--tile, var(--accent)) 16%, var(--surface)); color: var(--tile, var(--accent)); font-family: var(--font-display); font-weight: 600; font-size: 19px; }
+.tile-icon svg { width: 22px; height: 22px; }
+.tile b { font-family: var(--font-display); font-weight: 500; font-size: 18px; line-height: 1.25; }
+.tile p { color: var(--ink-2); font-size: 14px; }
+.tile-meta { margin-top: auto; display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-3); font-weight: 700; }
+.tile-ext { position: absolute; top: 16px; right: 16px; color: var(--ink-3); }
+@media (prefers-reduced-motion: reduce) { .tile, .btn { transition: none; } .tile:hover { transform: none; } }
+
+/* Lista de pacientes */
+.plist { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); overflow: hidden; }
+.prow { display: grid; grid-template-columns: minmax(0, 2.2fr) 90px minmax(0, 1.2fr) 130px; gap: 12px; align-items: center; padding: 12px 18px; border-top: 1px solid var(--line); text-align: left; background: none; border-left: 0; border-right: 0; border-bottom: 0; width: 100%; cursor: pointer; min-height: 56px; }
+.prow:first-child { border-top: 0; }
+.prow:hover { background: var(--surface-2); }
+.prow.head { cursor: default; background: var(--surface-2); font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); min-height: 40px; }
+.prow .nm { font-weight: 700; overflow-wrap: anywhere; }
+@media (max-width: 680px) {
+  .prow { grid-template-columns: minmax(0, 1fr) auto; }
+  .prow .c-tel, .prow .c-age { display: none; }
+  .prow.head { display: none; }
+}
+
+/* Ficha */
+.pac-head { display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between; align-items: flex-start; }
+.pac-meta { display: flex; flex-wrap: wrap; gap: 6px 18px; color: var(--ink-2); font-size: 15px; }
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: thin; }
+.tabs button { display: inline-flex; align-items: center; gap: 8px; border: 0; background: none; padding: 12px 14px; min-height: 46px; font-weight: 700; color: var(--ink-2); cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -1px; white-space: nowrap; }
+.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--tabc, var(--accent)); }
+.tabs button:hover { color: var(--ink); }
+.subtabs { display: inline-flex; gap: 4px; padding: 4px; background: var(--surface-2); border-radius: 11px; }
+.subtabs button { border: 0; background: none; min-height: 38px; padding: 6px 14px; border-radius: 8px; font-weight: 700; color: var(--ink-2); cursor: pointer; }
+.subtabs button[aria-selected="true"] { background: var(--surface); color: var(--ink); box-shadow: var(--shadow); }
+.dl { display: grid; grid-template-columns: minmax(140px, 220px) minmax(0, 1fr); gap: 0; border-top: 1px solid var(--line); }
+.dl > div { display: contents; }
+.dl dt, .dl dd { padding: 11px 0; border-bottom: 1px solid var(--line); margin: 0; }
+.dl dt { color: var(--ink-3); font-weight: 700; font-size: 14px; padding-right: 16px; }
+.dl dd { white-space: pre-wrap; overflow-wrap: anywhere; }
+@media (max-width: 560px) { .dl { grid-template-columns: 1fr; } .dl dt { border-bottom: 0; padding-bottom: 0; } }
+.evo { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 16px; padding: 18px 0; border-top: 1px solid var(--line); }
+.evo:first-child { border-top: 0; padding-top: 4px; }
+.evo-date { font-family: var(--font-display); font-weight: 500; line-height: 1.15; }
+.evo-date b { display: block; font-size: 26px; font-weight: 500; }
+.evo-date span { font-size: 13px; color: var(--ink-3); text-transform: uppercase; letter-spacing: .06em; }
+.evo-body { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.evo-body p { white-space: pre-wrap; overflow-wrap: anywhere; }
+.evo-k { font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+@media (max-width: 560px) { .evo { grid-template-columns: 1fr; gap: 8px; } }
+.lock { display: flex; gap: 10px; align-items: flex-start; padding: 14px 16px; border-radius: var(--r-sm); background: var(--surface-2); color: var(--ink-2); font-size: 14px; }
+.lock svg { flex: none; margin-top: 2px; }
+
+/* Administração */
+.ucard { display: flex; flex-direction: column; gap: 14px; }
+.ucard.pend { border-color: var(--warn); }
+.perm-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
+.perm { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--surface-2); }
+.perm .lbl { display: flex; align-items: center; gap: 8px; }
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { background: var(--surface-2); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-3); font-weight: 800; white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+.cal-frame { border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; background: var(--surface); }
+.cal-frame iframe { display: block; width: 100%; height: max(560px, 72vh); border: 0; }
+ol.steps { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; color: var(--ink-2); }
+.confirm { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 10px 12px; border-radius: var(--r-sm); background: var(--crit-tint); color: var(--crit); font-weight: 700; font-size: 14px; }
+</style>
+
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+/* ============================== CONFIGURAÇÃO ============================== */
+const CONFIG = window.CLINICA_CONFIG || {};
+const LIVE = Boolean(CONFIG.supabaseUrl && CONFIG.supabaseAnonKey);
+const SUPABASE_ESM = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/+esm';
+
+const PAPEIS = {
+  mestre: 'Administrador mestre', admin: 'Administrador', profissional: 'Profissional',
+  recepcao: 'Recepção', paciente: 'Paciente', pendente: 'Aguardando liberação'
+};
+const EQUIPE = ['mestre', 'admin', 'profissional', 'recepcao'];
+const GESTOR = ['mestre', 'admin'];
+const CLINICOS = ['mestre', 'admin', 'profissional'];
+const TIPOS = ['Avaliação', 'Sessão', 'Retorno', 'Consulta', 'Devolutiva'];
+const ANAMNESE_BASE = [
+  { k: 'queixa', t: 'Queixa principal', h: 'Motivo da procura, nas palavras do paciente' },
+  { k: 'hda', t: 'História da queixa atual', h: 'Início, evolução, o que piora e o que melhora' },
+  { k: 'saude', t: 'Histórico de saúde', h: 'Doenças, cirurgias, internações e acompanhamentos anteriores' },
+  { k: 'medicacoes', t: 'Medicações em uso' },
+  { k: 'alergias', t: 'Alergias' },
+  { k: 'habitos', t: 'Hábitos de vida', h: 'Sono, alimentação, atividade física, uso de substâncias' },
+  { k: 'familiar', t: 'Histórico familiar' },
+  { k: 'objetivos', t: 'Objetivos do acompanhamento' },
+  { k: 'obs', t: 'Observações' }
+];
+const CAMPOS_PACIENTE = [
+  ['nome', 'Nome completo'], ['nascimento', 'Data de nascimento'], ['cpf', 'CPF'], ['telefone', 'Telefone'],
+  ['email', 'E-mail'], ['endereco', 'Endereço'], ['contato_emergencia', 'Contato de emergência'], ['observacoes', 'Observações']
+];
+
+/* ============================== UTILITÁRIOS ============================== */
+const $ = (s, el = document) => el.querySelector(s);
+const esc = (v) => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const uid = () => (crypto.randomUUID ? crypto.randomUUID() : 'id-' + Math.random().toString(36).slice(2) + Date.now().toString(36));
+const hashStr = (s) => { let h = 5381; for (const c of String(s)) h = ((h << 5) + h + c.charCodeAt(0)) >>> 0; return 'h' + h.toString(36); };
+const hojeISO = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date());
+const fmtData = (d) => { if (!d) return ''; const [y, m, dd] = String(d).slice(0, 10).split('-'); return `${dd}/${m}/${y}`; };
+const fmtDataHora = (iso) => { if (!iso) return ''; const d = new Date(iso); return d.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }) + ' ' + d.toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit' }); };
+const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+const idade = (nasc) => {
+  if (!nasc) return null;
+  const [y, m, d] = nasc.split('-').map(Number); const [Y, M, D] = hojeISO().split('-').map(Number);
+  let a = Y - y; if (M < m || (M === m && D < d)) a--; return a >= 0 ? a : null;
+};
+const primeiroNome = (n) => String(n || '').trim().split(/\s+/)[0] || '';
+const hojeExtenso = () => new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo', weekday: 'long', day: 'numeric', month: 'long' });
+const normaliza = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+const safeUrl = (u) => /^https?:\/\//i.test(String(u || '').trim()) ? String(u).trim() : '';
+
+/* ============================== ARMAZENAMENTO · DEMONSTRAÇÃO ============================== */
+function demoStore() {
+  const KEY = 'clinica-demo-v1';
+  let db = null;
+  try { db = JSON.parse(localStorage.getItem(KEY)); } catch (e) { db = null; }
+  if (!db || db.v !== 1) db = seed();
+  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(db)); } catch (e) {} };
+
+  function seed() {
+    const agora = new Date().toISOString();
+    const d = (n) => { const x = new Date(); x.setDate(x.getDate() - n); return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(x); };
+    const E1 = 'esp-neuro', E2 = 'esp-psico', E3 = 'esp-integr';
+    return {
+      v: 1, session: null,
+      config: { nome_clinica: 'Clínica', agenda_url: '' },
+      users: [
+        { id: 'u-mestre', nome: 'Luis Henrique', email: 'mestre@demo', pw: hashStr('demo'), papel: 'mestre', ativo: true, registro_profissional: '', created_at: agora },
+        { id: 'u-prof', nome: 'Marina Alves', email: 'profissional@demo', pw: hashStr('demo'), papel: 'profissional', ativo: true, registro_profissional: 'CRP 06/000000', created_at: agora },
+        { id: 'u-rec', nome: 'Paula Reis', email: 'recepcao@demo', pw: hashStr('demo'), papel: 'recepcao', ativo: true, registro_profissional: '', created_at: agora },
+        { id: 'u-pac', nome: 'Carlos Menezes', email: 'paciente@demo', pw: hashStr('demo'), papel: 'paciente', ativo: true, registro_profissional: '', created_at: agora },
+        { id: 'u-pend', nome: 'Ricardo Lima', email: 'novo@demo', pw: hashStr('demo'), papel: 'pendente', ativo: true, registro_profissional: '', created_at: agora }
+      ],
+      esps: [
+        { id: E1, nome: 'Neurociência aplicada', cor: '#2E6B5F', campos: ['Padrões observados no EEG', 'Estado emocional relatado'], ativa: true, ordem: 1 },
+        { id: E2, nome: 'Psicologia', cor: '#5B5FA8', campos: ['Rede de apoio', 'Acompanhamentos psicológicos anteriores'], ativa: true, ordem: 2 },
+        { id: E3, nome: 'Terapias integrativas', cor: '#A0632E', campos: ['Práticas já realizadas'], ativa: true, ordem: 3 }
+      ],
+      perms: [
+        { user_id: 'u-mestre', especialidade_id: E1, nivel: 'escrita' },
+        { user_id: 'u-prof', especialidade_id: E1, nivel: 'leitura' },
+        { user_id: 'u-prof', especialidade_id: E2, nivel: 'escrita' }
+      ],
+      pacientes: [
+        { id: 'p1', nome: 'Carlos Menezes', nascimento: '1984-03-12', cpf: '', telefone: '(15) 99999-1020', email: 'paciente@demo', endereco: 'Sorocaba/SP', contato_emergencia: 'Ana Menezes · (15) 99999-3344', observacoes: '', user_id: 'u-pac', ativo: true, created_at: agora },
+        { id: 'p2', nome: 'Beatriz Fonseca', nascimento: '1991-11-02', cpf: '', telefone: '(15) 98888-2211', email: 'beatriz@exemplo.com', endereco: 'Piedade/SP', contato_emergencia: '', observacoes: 'Prefere atendimento no fim da tarde.', user_id: null, ativo: true, created_at: agora },
+        { id: 'p3', nome: 'João Pedro Albuquerque', nascimento: '2010-06-21', cpf: '', telefone: '(15) 97777-8899', email: '', endereco: 'Votorantim/SP', contato_emergencia: 'Mãe: Renata · (15) 97777-1000', observacoes: 'Menor de idade: responsável acompanha as sessões.', user_id: null, ativo: true, created_at: agora },
+        { id: 'p4', nome: 'Helena Prado', nascimento: '1967-01-30', cpf: '', telefone: '(11) 96666-5544', email: 'helena@exemplo.com', endereco: 'São Paulo/SP', contato_emergencia: '', observacoes: '', user_id: null, ativo: true, created_at: agora }
+      ],
+      anam: [
+        { id: 'a1', paciente_id: 'p1', especialidade_id: E1, dados: { queixa: 'Dificuldade de concentração e sono fragmentado há cerca de oito meses.', hda: 'Piora em períodos de maior carga de trabalho. Relata acordar entre 3h e 4h com pensamentos acelerados.', habitos: 'Dorme cerca de 5h por noite. Café até as 18h. Caminhada duas vezes por semana.', objetivos: 'Melhorar o foco no trabalho e a qualidade do sono.', 'extra:Padrões observados no EEG': 'Predomínio de beta alto em repouso de olhos fechados; alfa reduzido em região occipital.' }, updated_at: agora, updated_by: 'u-mestre' },
+        { id: 'a2', paciente_id: 'p1', especialidade_id: E2, dados: { queixa: 'Ansiedade antes de reuniões e apresentações.', 'extra:Rede de apoio': 'Esposa e irmã.' }, updated_at: agora, updated_by: 'u-prof' }
+      ],
+      atend: [
+        { id: 't1', paciente_id: 'p1', especialidade_id: E1, profissional_id: 'u-mestre', data: d(21), tipo: 'Avaliação', registro: 'Avaliação inicial com EEG portátil em repouso (olhos abertos e fechados). Explicados ao paciente os objetivos do acompanhamento.', conduta: 'Protocolo de 8 sessões. Higiene do sono: corte de cafeína após 14h.', created_at: agora },
+        { id: 't2', paciente_id: 'p1', especialidade_id: E1, profissional_id: 'u-mestre', data: d(14), tipo: 'Sessão', registro: 'Relata duas noites com sono contínuo na semana. Sessão sem intercorrências.', conduta: 'Manter protocolo.', created_at: agora },
+        { id: 't3', paciente_id: 'p1', especialidade_id: E2, profissional_id: 'u-prof', data: d(10), tipo: 'Sessão', registro: 'Trabalhadas situações de exposição em reuniões. Identificados pensamentos automáticos de desqualificação.', conduta: 'Registro de pensamentos até a próxima sessão.', created_at: agora },
+        { id: 't4', paciente_id: 'p2', especialidade_id: E2, profissional_id: 'u-prof', data: d(3), tipo: 'Avaliação', registro: 'Primeira sessão. Queixa de esgotamento após mudança de cidade.', conduta: 'Sessões semanais.', created_at: agora }
+      ],
+      atalhos: [
+        { id: 'l1', titulo: 'Rede Ayla', descricao: 'Plataforma e ferramentas da Rede Ayla', url: 'https://redeayla.net', cor: '#7A4FA0', alvo: 'selecionados', usuarios: ['u-mestre', 'u-prof'], ordem: 1, ativo: true },
+        { id: 'l2', titulo: 'Google Agenda', descricao: 'Agenda completa no Google', url: 'https://calendar.google.com/calendar/r', cor: '#2F68B0', alvo: 'equipe', usuarios: [], ordem: 2, ativo: true },
+        { id: 'l3', titulo: 'WhatsApp Web', descricao: 'Conversas com pacientes', url: 'https://web.whatsapp.com', cor: '#2D7550', alvo: 'equipe', usuarios: [], ordem: 3, ativo: true }
+      ],
+      audit: []
+    };
+  }
+
+  const me = () => db.users.find(u => u.id === db.session) || null;
+  const papel = () => { const u = me(); return u && u.ativo ? u.papel : null; };
+  const eq = () => EQUIPE.includes(papel());
+  const gest = () => GESTOR.includes(papel());
+  const nivel = (e) => { const u = me(); if (!u || !u.ativo || !CLINICOS.includes(u.papel)) return null; const p = db.perms.find(x => x.user_id === u.id && x.especialidade_id === e); return p ? p.nivel : null; };
+  const deny = (m = 'Sem permissão para esta ação.') => { throw new Error(m); };
+  const strip = (u) => { const { pw, ...r } = u; return r; };
+  const nomeDe = (id) => db.users.find(u => u.id === id)?.nome || '';
+  const log = (acao, o = {}) => { db.audit.unshift({ id: (db.audit[0]?.id || 0) + 1, user_id: db.session, acao, criado_em: new Date().toISOString(), ...o }); };
+  const permsDe = (id) => Object.fromEntries(db.perms.filter(p => p.user_id === id).map(p => [p.especialidade_id, p.nivel]));
+  const linkPorEmail = (pac) => {
+    if (pac.user_id || !pac.email) return;
+    const u = db.users.find(x => x.email.toLowerCase() === pac.email.toLowerCase() && x.papel === 'pendente' && !db.pacientes.some(p => p.user_id === x.id));
+    if (u) { pac.user_id = u.id; u.papel = 'paciente'; }
+  };
+
+  return {
+    mode: 'demo',
+    async session() { return me() ? { id: me().id, email: me().email } : null; },
+    async signIn(email, pw) {
+      const u = db.users.find(x => x.email.toLowerCase() === String(email).trim().toLowerCase());
+      if (!u || u.pw !== hashStr(pw)) throw new Error('E-mail ou senha incorretos.');
+      db.session = u.id; save();
+    },
+    async signInAs(id) { db.session = id; save(); },
+    async signUp(nome, email, pw) {
+      email = String(email).trim();
+      if (db.users.some(x => x.email.toLowerCase() === email.toLowerCase())) throw new Error('Já existe uma conta com este e-mail. Use Entrar.');
+      const id = uid();
+      const pac = db.pacientes.find(p => p.email && p.email.toLowerCase() === email.toLowerCase() && !p.user_id);
+      db.users.push({ id, nome: nome.trim(), email, pw: hashStr(pw), papel: pac ? 'paciente' : 'pendente', ativo: true, registro_profissional: '', created_at: new Date().toISOString() });
+      if (pac) pac.user_id = id;
+      db.session = id; save();
+      return { confirmar: false };
+    },
+    async signOut() { db.session = null; save(); },
+    async resetPassword() { return { demo: true }; },
+    async reset() { try { localStorage.removeItem(KEY); } catch (e) {} db = seed(); },
+    async perfil() { const u = me(); return u ? { ...strip(u), permissoes: permsDe(u.id) } : null; },
+    async usuarios() { if (!gest()) deny(); return db.users.map(u => ({ ...strip(u), permissoes: permsDe(u.id) })); },
+    async equipe() { if (!eq()) return []; return db.users.filter(u => EQUIPE.includes(u.papel)).map(strip); },
+    async atualizarUsuario(id, { papel: np, ativo, registro }) {
+      const eu = papel(); if (!GESTOR.includes(eu)) deny();
+      if (id === db.session) deny('O seu próprio perfil não pode ser alterado por aqui.');
+      const u = db.users.find(x => x.id === id); if (!u) deny('Usuário não encontrado.');
+      if (eu !== 'mestre' && (GESTOR.includes(u.papel) || GESTOR.includes(np))) deny('Somente o administrador mestre define administradores.');
+      u.papel = np; u.ativo = ativo !== false; u.registro_profissional = registro || '';
+      log('Alterou acesso de usuário', { detalhe: `${u.nome} · ${np}${u.ativo ? '' : ' · inativo'}` }); save();
+    },
+    async definirPermissoes(id, lista) {
+      const eu = papel(); if (!GESTOR.includes(eu)) deny();
+      const u = db.users.find(x => x.id === id); if (!u) deny('Usuário não encontrado.');
+      if (eu !== 'mestre' && GESTOR.includes(u.papel)) deny('Somente o administrador mestre define as permissões de administradores.');
+      db.perms = db.perms.filter(p => p.user_id !== id).concat(lista.filter(x => ['leitura', 'escrita'].includes(x.nivel)).map(x => ({ user_id: id, especialidade_id: x.especialidade_id, nivel: x.nivel })));
+      log('Alterou permissões clínicas', { detalhe: u.nome }); save();
+    },
+    async especialidades() { if (!eq()) return []; return [...db.esps].sort((a, b) => (a.ordem - b.ordem) || a.nome.localeCompare(b.nome)); },
+    async salvarEspecialidade(e) {
+      if (!gest()) deny();
+      if (db.esps.some(x => x.id !== e.id && normaliza(x.nome) === normaliza(e.nome))) deny('Já existe uma especialidade com este nome.');
+      if (e.id) Object.assign(db.esps.find(x => x.id === e.id), e);
+      else db.esps.push({ ...e, id: uid(), ordem: db.esps.length + 1 });
+      save();
+    },
+    async pacientes() {
+      if (eq()) return [...db.pacientes].sort((a, b) => a.nome.localeCompare(b.nome));
+      return db.pacientes.filter(p => p.user_id && p.user_id === db.session);
+    },
+    async paciente(id) { const p = db.pacientes.find(x => x.id === id); if (!p || !(eq() || p.user_id === db.session)) deny('Paciente não encontrado.'); return { ...p }; },
+    async salvarPaciente(p) {
+      if (!eq()) deny();
+      if (p.email && db.pacientes.some(x => x.id !== p.id && x.email && x.email.toLowerCase() === p.email.toLowerCase())) deny('Já existe um paciente com este e-mail.');
+      let reg;
+      if (p.id) { reg = db.pacientes.find(x => x.id === p.id); Object.assign(reg, p); log('Alterou cadastro do paciente', { paciente_id: reg.id }); }
+      else { reg = { ...p, id: uid(), user_id: null, ativo: true, created_at: new Date().toISOString() }; db.pacientes.push(reg); log('Cadastrou paciente', { paciente_id: reg.id }); }
+      linkPorEmail(reg); save(); return { ...reg };
+    },
+    async meuPaciente() { return db.pacientes.find(p => p.user_id && p.user_id === db.session) || null; },
+    async anamnese(pid, eid) {
+      if (!nivel(eid)) deny();
+      const a = db.anam.find(x => x.paciente_id === pid && x.especialidade_id === eid);
+      return a ? { ...a, autor: nomeDe(a.updated_by) } : null;
+    },
+    async salvarAnamnese(pid, eid, dados) {
+      if (nivel(eid) !== 'escrita') deny();
+      let a = db.anam.find(x => x.paciente_id === pid && x.especialidade_id === eid);
+      const novo = !a;
+      if (!a) { a = { id: uid(), paciente_id: pid, especialidade_id: eid }; db.anam.push(a); }
+      Object.assign(a, { dados, updated_at: new Date().toISOString(), updated_by: db.session });
+      log(novo ? 'Criou anamnese' : 'Alterou anamnese', { paciente_id: pid, detalhe: db.esps.find(e => e.id === eid)?.nome }); save();
+    },
+    async atendimentos(pid, eid) {
+      if (!nivel(eid)) deny();
+      return db.atend.filter(x => x.paciente_id === pid && x.especialidade_id === eid)
+        .sort((a, b) => b.data.localeCompare(a.data) || b.created_at.localeCompare(a.created_at))
+        .map(x => ({ ...x, profissional: nomeDe(x.profissional_id) }));
+    },
+    async salvarAtendimento(a) {
+      if (nivel(a.especialidade_id) !== 'escrita') deny();
+      if (a.id) {
+        const r = db.atend.find(x => x.id === a.id);
+        if (!r || r.profissional_id !== db.session) deny('Somente quem registrou o atendimento pode alterá-lo.');
+        Object.assign(r, { data: a.data, tipo: a.tipo, registro: a.registro, conduta: a.conduta });
+        log('Alterou atendimento', { paciente_id: a.paciente_id, detalhe: db.esps.find(e => e.id === a.especialidade_id)?.nome });
+      } else {
+        db.atend.push({ ...a, id: uid(), profissional_id: db.session, created_at: new Date().toISOString() });
+        log('Registrou atendimento', { paciente_id: a.paciente_id, detalhe: db.esps.find(e => e.id === a.especialidade_id)?.nome });
+      }
+      save();
+    },
+    async atalhos() {
+      const p = papel(); if (!p || p === 'pendente') return [];
+      const lista = [...db.atalhos].sort((a, b) => a.ordem - b.ordem);
+      if (GESTOR.includes(p)) return lista;
+      return lista.filter(a => a.ativo && (a.alvo === 'todos' || (a.alvo === 'equipe' && EQUIPE.includes(p)) || (a.alvo === 'pacientes' && p === 'paciente') || (a.alvo === 'selecionados' && a.usuarios.includes(db.session))));
+    },
+    async salvarAtalho(a) {
+      if (!gest()) deny();
+      if (a.id) Object.assign(db.atalhos.find(x => x.id === a.id), a);
+      else db.atalhos.push({ ...a, id: uid(), ordem: db.atalhos.length + 1 });
+      save();
+    },
+    async removerAtalho(id) { if (!gest()) deny(); db.atalhos = db.atalhos.filter(x => x.id !== id); save(); },
+    async config() { return { ...db.config }; },
+    async salvarConfig(chave, valor) { if (!gest()) deny(); db.config[chave] = valor; save(); },
+    async registrar(acao, o = {}) { if (!papel()) return; log(acao, o); save(); },
+    async auditoria() {
+      if (!gest()) deny();
+      return db.audit.slice(0, 300).map(x => ({ ...x, usuario: nomeDe(x.user_id), paciente: db.pacientes.find(p => p.id === x.paciente_id)?.nome || '' }));
+    }
+  };
+}
+
+/* ============================== ARMAZENAMENTO · SUPABASE ============================== */
+async function liveStore() {
+  const mod = await import(SUPABASE_ESM);
+  const sb = mod.createClient(CONFIG.supabaseUrl, CONFIG.supabaseAnonKey);
+  const ok = (r) => { if (r.error) throw new Error(traduz(r.error.message)); return r.data; };
+  const traduz = (m) => {
+    if (/Invalid login credentials/i.test(m)) return 'E-mail ou senha incorretos.';
+    if (/Email not confirmed/i.test(m)) return 'Confirme o seu e-mail pelo link que enviamos antes de entrar.';
+    if (/already registered/i.test(m)) return 'Já existe uma conta com este e-mail. Use Entrar.';
+    if (/Password should be at least/i.test(m)) return 'A senha precisa ter pelo menos 6 caracteres.';
+    if (/row-level security/i.test(m)) return 'Sem permissão para esta ação.';
+    if (/duplicate key.*email/i.test(m)) return 'Já existe um paciente com este e-mail.';
+    if (/duplicate key.*nome/i.test(m)) return 'Já existe uma especialidade com este nome.';
+    return m;
+  };
+  let uidAtual = null;
+  const sess = async () => { const { data } = await sb.auth.getSession(); uidAtual = data.session?.user?.id || null; return data.session; };
+  sb.auth.onAuthStateChange((ev) => { if (ev === 'PASSWORD_RECOVERY') { S.view = 'nova-senha'; render(); } });
+
+  return {
+    mode: 'live',
+    async session() { const s = await sess(); return s ? { id: s.user.id, email: s.user.email } : null; },
+    async signIn(email, pw) { ok(await sb.auth.signInWithPassword({ email: String(email).trim(), password: pw })); await sess(); },
+    async signUp(nome, email, pw) {
+      const d = ok(await sb.auth.signUp({ email: String(email).trim(), password: pw, options: { data: { nome: nome.trim() }, emailRedirectTo: location.href.split('#')[0] } }));
+      await sess(); return { confirmar: !d.session };
+    },
+    async signOut() { await sb.auth.signOut(); uidAtual = null; },
+    async resetPassword(email) { ok(await sb.auth.resetPasswordForEmail(String(email).trim(), { redirectTo: location.href.split('#')[0] })); return {}; },
+    async novaSenha(pw) { ok(await sb.auth.updateUser({ password: pw })); },
+    async perfil() {
+      if (!uidAtual) return null;
+      const p = ok(await sb.from('perfis').select('*').eq('id', uidAtual).maybeSingle());
+      if (!p) return null;
+      const perms = ok(await sb.from('permissoes').select('especialidade_id,nivel').eq('user_id', uidAtual));
+      return { ...p, permissoes: Object.fromEntries(perms.map(x => [x.especialidade_id, x.nivel])) };
+    },
+    async usuarios() {
+      const us = ok(await sb.from('perfis').select('*').order('nome'));
+      const ps = ok(await sb.from('permissoes').select('*'));
+      return us.map(u => ({ ...u, permissoes: Object.fromEntries(ps.filter(p => p.user_id === u.id).map(p => [p.especialidade_id, p.nivel])) }));
+    },
+    async equipe() { return ok(await sb.from('perfis').select('id,nome,papel,registro_profissional').in('papel', EQUIPE).order('nome')); },
+    async atualizarUsuario(id, { papel, ativo, registro }) { ok(await sb.rpc('gestor_atualizar_usuario', { p_user: id, p_papel: papel, p_ativo: ativo, p_registro: registro || null })); },
+    async definirPermissoes(id, lista) { ok(await sb.rpc('gestor_definir_permissoes', { p_user: id, p_lista: lista })); },
+    async especialidades() { return ok(await sb.from('especialidades').select('*').order('ordem').order('nome')); },
+    async salvarEspecialidade(e) {
+      const row = { nome: e.nome, cor: e.cor, campos: e.campos, ativa: e.ativa };
+      if (e.id) ok(await sb.from('especialidades').update(row).eq('id', e.id));
+      else ok(await sb.from('especialidades').insert(row));
+    },
+    async pacientes() { return ok(await sb.from('pacientes').select('id,nome,nascimento,telefone,email,user_id,ativo').order('nome')); },
+    async paciente(id) { return ok(await sb.from('pacientes').select('*').eq('id', id).single()); },
+    async salvarPaciente(p) {
+      const row = {}; CAMPOS_PACIENTE.forEach(([k]) => { row[k] = p[k] === '' ? null : p[k]; });
+      row.nome = p.nome;
+      if (p.id) return ok(await sb.from('pacientes').update(row).eq('id', p.id).select().single());
+      return ok(await sb.from('pacientes').insert(row).select().single());
+    },
+    async meuPaciente() { return ok(await sb.from('pacientes').select('*').eq('user_id', uidAtual).maybeSingle()); },
+    async anamnese(pid, eid) {
+      const a = ok(await sb.from('anamneses').select('*').eq('paciente_id', pid).eq('especialidade_id', eid).maybeSingle());
+      if (!a) return null;
+      let autor = '';
+      if (a.updated_by) { const r = await sb.from('perfis').select('nome').eq('id', a.updated_by).maybeSingle(); autor = r.data?.nome || ''; }
+      return { ...a, autor };
+    },
+    async salvarAnamnese(pid, eid, dados) {
+      ok(await sb.from('anamneses').upsert({ paciente_id: pid, especialidade_id: eid, dados }, { onConflict: 'paciente_id,especialidade_id' }));
+    },
+    async atendimentos(pid, eid) {
+      const rows = ok(await sb.from('atendimentos').select('*, prof:perfis(nome)').eq('paciente_id', pid).eq('especialidade_id', eid).order('data', { ascending: false }).order('created_at', { ascending: false }));
+      return rows.map(r => ({ ...r, profissional: r.prof?.nome || '' }));
+    },
+    async salvarAtendimento(a) {
+      const row = { data: a.data, tipo: a.tipo, registro: a.registro, conduta: a.conduta };
+      if (a.id) ok(await sb.from('atendimentos').update(row).eq('id', a.id));
+      else ok(await sb.from('atendimentos').insert({ ...row, paciente_id: a.paciente_id, especialidade_id: a.especialidade_id, profissional_id: uidAtual }));
+    },
+    async atalhos() { return ok(await sb.from('atalhos').select('*').order('ordem').order('titulo')); },
+    async salvarAtalho(a) {
+      const row = { titulo: a.titulo, descricao: a.descricao, url: a.url, cor: a.cor, alvo: a.alvo, usuarios: a.usuarios, ativo: a.ativo };
+      if (a.id) ok(await sb.from('atalhos').update(row).eq('id', a.id));
+      else ok(await sb.from('atalhos').insert(row));
+    },
+    async removerAtalho(id) { ok(await sb.from('atalhos').delete().eq('id', id)); },
+    async config() { const rows = ok(await sb.from('configuracoes').select('chave,valor')); return Object.fromEntries(rows.map(r => [r.chave, r.valor])); },
+    async salvarConfig(chave, valor) { ok(await sb.from('configuracoes').upsert({ chave, valor, updated_at: new Date().toISOString() })); },
+    async registrar(acao, o = {}) { await sb.from('auditoria').insert({ acao, user_id: uidAtual, paciente_id: o.paciente_id || null, detalhe: o.detalhe || null }); },
+    async auditoria() {
+      const rows = ok(await sb.from('auditoria').select('*, usu:perfis(nome), pac:pacientes(nome)').order('criado_em', { ascending: false }).limit(300));
+      return rows.map(r => ({ ...r, usuario: r.usu?.nome || '', paciente: r.pac?.nome || '' }));
+    }
+  };
+}
+
+/* ============================== ESTADO ============================== */
+let store;
+const S = {
+  boot: true, session: null, perfil: null, cfg: {}, view: 'login', authTab: 'entrar', authMsg: null,
+  msg: null, pacientes: [], esps: [], atalhos: [], busca: '',
+  pid: null, pac: null, ptab: 'cadastro', psub: 'anamnese', anam: null, atend: [], editAt: null, pform: null,
+  atab: 'usuarios', usuarios: [], audit: [], editLink: null, confirmDel: null, abertos: new Set(), busy: false
+};
+const papel = () => (S.perfil && S.perfil.ativo ? S.perfil.papel : null);
+const ehEquipe = () => EQUIPE.includes(papel());
+const ehGestor = () => GESTOR.includes(papel());
+const nivelEm = (eid) => (S.perfil && CLINICOS.includes(papel()) ? S.perfil.permissoes?.[eid] || null : null);
+const nomeClinica = () => (typeof S.cfg.nome_clinica === 'string' && S.cfg.nome_clinica.trim()) || CONFIG.nomeClinica || 'Clínica';
+
+/* ============================== ÍCONES ============================== */
+const IC = {
+  logo: '<svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="var(--accent)"/><path d="M16 7c-4.6 3.4-6.6 7.2-5.8 11.2.6 3 3 5.3 5.8 6.8 2.8-1.5 5.2-3.8 5.8-6.8.8-4-1.2-7.8-5.8-11.2Z" fill="none" stroke="var(--accent-ink)" stroke-width="2" stroke-linejoin="round"/><path d="M16 12v13" stroke="var(--accent-ink)" stroke-width="2" stroke-linecap="round"/></svg>',
+  agenda: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/><path d="M8 14h3v3H8z"/></svg>',
+  pacientes: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M3 20c.6-3.5 3-5.5 6-5.5s5.4 2 6 5.5"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14.8c1.6.8 2.7 2.5 3 5.2"/></svg>',
+  admin: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4 6v6c0 4.5 3.4 8 8 9 4.6-1 8-4.5 8-9V6l-8-3Z"/><path d="m9 12 2 2 4-4"/></svg>',
+  ficha: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>',
+  ext: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>',
+  lock: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>',
+  back: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>'
+};
+
+/* ============================== NAVEGAÇÃO ============================== */
+function go(view, extra = {}) {
+  Object.assign(S, { msg: null, confirmDel: null }, extra);
+  S.view = view;
+  const h = view === 'paciente' ? 'paciente-' + S.pid : view;
+  if (location.hash.slice(1) !== h) { try { history.pushState(null, '', '#' + h); } catch (e) { location.hash = h; } }
+  carregar().then(render);
+  window.scrollTo(0, 0);
+}
+async function rota() {
+  const h = location.hash.slice(1);
+  if (!S.perfil) return;
+  if (h === 'paciente-form' && ehEquipe()) S.view = 'pacientes';
+  else if (h.startsWith('paciente-') && ehEquipe()) { S.pid = h.slice(9); S.view = 'paciente'; S.ptab = 'cadastro'; }
+  else if (['agenda', 'pacientes'].includes(h) && ehEquipe()) S.view = h;
+  else if (h === 'admin' && ehGestor()) S.view = 'admin';
+  else if (h === 'meus-dados' && papel() === 'paciente') S.view = 'meus-dados';
+  else S.view = 'painel';
+  await carregar(); render();
+}
+window.addEventListener('hashchange', () => { if (S.perfil) rota(); });
+
+/* ============================== CARGA DE DADOS ============================== */
+async function carregar() {
+  try {
+    if (!S.perfil) return;
+    if (S.view === 'painel') {
+      S.atalhos = await store.atalhos();
+      if (ehEquipe()) S.pacientes = await store.pacientes();
+    } else if (S.view === 'pacientes') {
+      S.pacientes = await store.pacientes();
+    } else if (S.view === 'paciente') {
+      S.esps = await store.especialidades();
+      S.pac = await store.paciente(S.pid);
+      await carregarFicha();
+    } else if (S.view === 'admin') {
+      S.esps = await store.especialidades();
+      if (S.atab === 'usuarios') S.usuarios = await store.usuarios();
+      if (S.atab === 'atalhos') { S.atalhos = await store.atalhos(); S.usuarios = await store.usuarios(); }
+      if (S.atab === 'auditoria') S.audit = await store.auditoria();
+    } else if (S.view === 'meus-dados') {
+      S.pac = await store.meuPaciente();
+    }
+  } catch (e) { S.msg = { err: true, t: e.message }; }
+}
+async function carregarFicha() {
+  S.anam = null; S.atend = []; S.editAt = null;
+  if (S.ptab === 'cadastro' || !nivelEm(S.ptab)) return;
+  S.anam = await store.anamnese(S.pid, S.ptab);
+  S.atend = await store.atendimentos(S.pid, S.ptab);
+  const k = S.pid + '|' + S.ptab;
+  if (!S.abertos.has(k)) { S.abertos.add(k); store.registrar('Consultou ficha', { paciente_id: S.pid, detalhe: S.esps.find(e => e.id === S.ptab)?.nome }).catch(() => {}); }
+}
+
+/* ============================== RENDERIZAÇÃO ============================== */
+function render() {
+  const app = $('#app');
+  if (S.boot) { app.innerHTML = `<div class="wrap" style="padding-block:40px"><p class="muted">Carregando…</p></div>`; return; }
+  let body;
+  if (S.view === 'nova-senha') body = vNovaSenha();
+  else if (!S.session || !S.perfil) body = vLogin();
+  else if (!S.perfil.ativo) body = vBloqueado('Acesso desativado', 'O seu acesso foi desativado pela administração da clínica. Se acha que isso é um engano, fale com a recepção.');
+  else if (papel() === 'pendente') body = vBloqueado('Seu acesso está aguardando liberação', 'A conta foi criada. A administração da clínica precisa definir o seu perfil antes do primeiro acesso. Se você é paciente, peça à recepção para cadastrar o seu e-mail na sua ficha; a liberação é automática.');
+  else body = ({ painel: vPainel, agenda: vAgenda, pacientes: vPacientes, 'paciente-form': vPacienteForm, paciente: vPaciente, admin: vAdmin, 'meus-dados': vMeusDados }[S.view] || vPainel)();
+  app.innerHTML = vTopo() + `<main><div class="wrap stack" style="gap:24px">${body}</div></main>`;
+  const f = app.querySelector('[data-autofocus]'); if (f) f.focus();
+  app.querySelectorAll('.tabs [aria-selected="true"]').forEach(b => { const t = b.parentElement; t.scrollLeft = Math.max(0, b.offsetLeft - t.offsetLeft - 16); });
+}
+
+function vTopo() {
+  const p = S.perfil;
+  const logado = S.session && p;
+  return `<header class="top"><div class="wrap top-in">
+    <a class="brand" href="#painel" ${logado ? 'data-act="go" data-v="painel"' : ''}>${IC.logo}<span>${esc(nomeClinica())}</span></a>
+    ${logado ? `<div class="who"><span class="who-name">${esc(p.nome)}</span><span class="chip chip-accent">${esc(PAPEIS[p.papel] || p.papel)}</span><button class="btn-ghost" data-act="sair">Sair</button></div>` : ''}
+  </div></header>
+  ${store.mode === 'demo' ? `<div class="demo-strip" role="region" aria-label="Modo demonstração"><div class="wrap">Prévia em modo demonstração: os dados são de exemplo e ficam salvos só neste aparelho.${logado ? ' <button class="btn-ghost btn-sm" data-act="trocar" style="min-height:32px;padding:2px 8px">Trocar de perfil</button>' : ''}</div></div>` : ''}`;
+}
+const msgBox = () => S.msg ? `<div class="msg ${S.msg.err ? 'msg-err' : 'msg-ok'}" role="status">${esc(S.msg.t)}</div>` : '';
+const voltar = (v = 'painel', t = 'Voltar ao painel') => `<a class="back" href="#${v}" data-act="go" data-v="${v}">${IC.back}${esc(t)}</a>`;
+
+/* ---------- Login ---------- */
+function vLogin() {
+  const t = S.authTab;
+  const am = S.authMsg ? `<div class="msg ${S.authMsg.ok ? 'msg-ok' : 'msg-err'}" role="status">${esc(S.authMsg.t)}</div>` : '';
+  const form = t === 'entrar' ? `
+    <form class="stack" data-form="entrar" novalidate>
+      <div class="field"><label for="l-email">E-mail</label><input id="l-email" name="email" type="email" autocomplete="email" required data-autofocus></div>
+      <div class="field"><label for="l-pw">Senha</label><input id="l-pw" name="pw" type="password" autocomplete="current-password" required></div>
+      ${am}
+      <button class="btn btn-primary" type="submit" ${S.busy ? 'disabled' : ''}>${S.busy ? 'Entrando…' : 'Entrar'}</button>
+      <button class="btn-ghost" type="button" data-act="auth-tab" data-t="esqueci" style="align-self:flex-start">Esqueci a senha</button>
+    </form>` : t === 'criar' ? `
+    <form class="stack" data-form="criar" novalidate>
+      <p class="muted small">Pacientes: use o mesmo e-mail informado na recepção. Profissionais: depois de criar a conta, aguarde a liberação da administração.</p>
+      <div class="field"><label for="c-nome">Nome completo</label><input id="c-nome" name="nome" type="text" autocomplete="name" required data-autofocus></div>
+      <div class="field"><label for="c-email">E-mail</label><input id="c-email" name="email" type="email" autocomplete="email" required></div>
+      <div class="field"><label for="c-pw">Senha</label><input id="c-pw" name="pw" type="password" autocomplete="new-password" minlength="6" required><span class="hint">Mínimo de 6 caracteres.</span></div>
+      ${am}
+      <button class="btn btn-primary" type="submit" ${S.busy ? 'disabled' : ''}>${S.busy ? 'Criando…' : 'Criar acesso'}</button>
+    </form>` : `
+    <form class="stack" data-form="esqueci" novalidate>
+      <p class="muted small">Informe o e-mail da sua conta. Você recebe um link para criar uma nova senha.</p>
+      <div class="field"><label for="r-email">E-mail</label><input id="r-email" name="email" type="email" autocomplete="email" required data-autofocus></div>
+      ${am}
+      <button class="btn btn-primary" type="submit">Enviar link</button>
+      <button class="btn-ghost" type="button" data-act="auth-tab" data-t="entrar" style="align-self:flex-start">Voltar para Entrar</button>
+    </form>`;
+  const demo = store.mode === 'demo' ? `
+    <div class="card stack" style="gap:12px">
+      <div><p class="h-sec">Entrar na prévia como</p><p class="muted small" style="margin-top:4px">Cada perfil mostra o que aquela pessoa vê. Senha de todos: demo.</p></div>
+      <div class="demo-users">
+        ${[['u-mestre', 'Luis Henrique', 'Administrador mestre · neurociência (escrita)'], ['u-prof', 'Marina Alves', 'Profissional · psicologia (escrita), neurociência (leitura)'], ['u-rec', 'Paula Reis', 'Recepção · agenda e cadastro, sem fichas'], ['u-pac', 'Carlos Menezes', 'Paciente · os próprios dados'], ['u-pend', 'Ricardo Lima', 'Conta nova, aguardando liberação']]
+          .map(([id, n, d]) => `<button class="demo-user" data-act="demo-entrar" data-id="${id}"><span style="display:block"><b>${n}</b><span>${d}</span></span>${IC.back.replace('M15 18l-6-6 6-6', 'M9 18l6-6-6-6')}</button>`).join('')}
+      </div>
+      <button class="btn-ghost btn-sm" data-act="demo-reset" style="align-self:flex-start">Restaurar os dados de exemplo</button>
+    </div>` : '';
+  return `<section class="login">
+    <div class="login-intro">
+      <p class="eyebrow">Acesso da equipe e dos pacientes</p>
+      <h1>${esc(nomeClinica())}</h1>
+      <p class="muted" style="font-size:18px">Agenda, cadastro e prontuário da clínica em um só lugar.</p>
+      <ul class="login-list">
+        <li>Cada pessoa vê apenas o que o seu perfil permite.</li>
+        <li>Fichas clínicas separadas por especialidade, com anamnese e histórico de atendimentos.</li>
+        <li>Toda consulta e alteração de ficha fica registrada.</li>
+      </ul>
+    </div>
+    <div class="stack">
+      <div class="card stack">
+        ${t !== 'esqueci' ? `<div class="seg" role="tablist" aria-label="Acesso"><button role="tab" aria-selected="${t === 'entrar'}" data-act="auth-tab" data-t="entrar">Entrar</button><button role="tab" aria-selected="${t === 'criar'}" data-act="auth-tab" data-t="criar">Criar acesso</button></div>` : '<h2>Recuperar senha</h2>'}
+        ${form}
+      </div>
+      ${demo}
+    </div>
+  </section>`;
+}
+function vNovaSenha() {
+  return `<section class="card stack" style="max-width:480px">
+    <h1 style="font-size:26px">Criar nova senha</h1>
+    <form class="stack" data-form="nova-senha">
+      <div class="field"><label for="ns-pw">Nova senha</label><input id="ns-pw" name="pw" type="password" minlength="6" autocomplete="new-password" required data-autofocus></div>
+      ${msgBox()}
+      <button class="btn btn-primary" type="submit">Salvar senha</button>
+    </form></section>`;
+}
+function vBloqueado(t, d) {
+  return `<section class="card stack" style="max-width:620px;margin-top:16px">
+    <span class="chip chip-warn" style="align-self:flex-start">${IC.lock} Acesso restrito</span>
+    <h1 style="font-size:26px">${esc(t)}</h1><p class="muted">${esc(d)}</p>
+    <button class="btn btn-quiet" data-act="sair" style="align-self:flex-start">Sair</button></section>`;
+}
+
+/* ---------- Painel ---------- */
+function aplicaAtalho(a) {
+  const p = papel();
+  if (!a.ativo) return false;
+  return a.alvo === 'todos' || (a.alvo === 'equipe' && EQUIPE.includes(p)) || (a.alvo === 'pacientes' && p === 'paciente') || (a.alvo === 'selecionados' && (a.usuarios || []).includes(S.perfil.id));
+}
+function tileInterno(v, icone, titulo, desc, meta, cor) {
+  return `<a class="tile" href="#${v}" data-act="go" data-v="${v}" style="--tile:${cor || 'var(--accent)'}"><span class="tile-icon">${icone}</span><span class="stack" style="gap:4px"><b>${esc(titulo)}</b><p>${esc(desc)}</p></span>${meta ? `<span class="tile-meta">${meta}</span>` : ''}</a>`;
+}
+function vPainel() {
+  const p = papel();
+  const sub = { mestre: 'Você administra a clínica: usuários, permissões, especialidades e atalhos.', admin: 'Você administra usuários, especialidades e atalhos da clínica.', profissional: 'Agenda, pacientes e as fichas das suas especialidades.', recepcao: 'Agenda e cadastro dos pacientes.', paciente: 'Seus dados e os links que a clínica preparou para você.' }[p] || '';
+  const internos = [];
+  if (ehEquipe()) {
+    internos.push(tileInterno('agenda', IC.agenda, 'Agenda', 'Agenda compartilhada da clínica', S.cfg.agenda_url ? 'Google Agenda vinculada' : (ehGestor() ? 'Vincular em Administração' : ''), '#2F68B0'));
+    const n = S.pacientes.length;
+    internos.push(tileInterno('pacientes', IC.pacientes, 'Pacientes', p === 'recepcao' ? 'Cadastro e contato dos pacientes' : 'Cadastro, anamnese e histórico de atendimentos', `<span class="tnum">${n} ${n === 1 ? 'cadastrado' : 'cadastrados'}</span>`));
+  }
+  if (ehGestor()) internos.push(tileInterno('admin', IC.admin, 'Administração', 'Usuários, permissões, especialidades e atalhos', '', '#7A5A2E'));
+  if (p === 'paciente') internos.push(tileInterno('meus-dados', IC.ficha, 'Meus dados', 'Seu cadastro na clínica', ''));
+  const links = S.atalhos.filter(aplicaAtalho);
+  const ext = links.map(a => `<a class="tile" href="${esc(safeUrl(a.url))}" target="_blank" rel="noopener noreferrer" style="--tile:${esc(a.cor || '#2E6B5F')}">
+      <span class="tile-ext" title="Abre em nova aba">${IC.ext}</span>
+      <span class="tile-icon">${esc((a.titulo || '?').trim().charAt(0).toUpperCase())}</span>
+      <span class="stack" style="gap:4px"><b>${esc(a.titulo)}</b>${a.descricao ? `<p>${esc(a.descricao)}</p>` : ''}</span>
+      <span class="tile-meta"><span>${esc(dominio(a.url))}</span></span></a>`).join('');
+  return `${msgBox()}
+  <section class="hello"><p class="eyebrow">${esc(hojeExtenso())}</p><h1>Olá, ${esc(primeiroNome(S.perfil.nome))}</h1><p class="muted">${esc(sub)}</p></section>
+  ${internos.length ? `<section class="stack" style="gap:12px"><h2 class="h-sec">Áreas da clínica</h2><div class="tiles">${internos.join('')}</div></section>` : ''}
+  <section class="stack" style="gap:12px">
+    <div class="spread"><h2 class="h-sec">Ferramentas e links</h2>${ehGestor() ? `<button class="btn-ghost btn-sm" data-act="go" data-v="admin" data-atab="atalhos">Gerenciar atalhos</button>` : ''}</div>
+    <p class="muted small" style="margin-top:-6px">Os links abrem em uma nova aba. Esta aba continua aberta: para voltar ao painel, é só retornar a ela.</p>
+    ${ext ? `<div class="tiles">${ext}</div>` : `<div class="empty">${ehGestor() ? 'Nenhum atalho para o seu perfil ainda. Cadastre em Administração > Atalhos e escolha quem vê cada um.' : 'Nenhum link disponível para o seu perfil ainda.'}</div>`}
+  </section>`;
+}
+const dominio = (u) => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch (e) { return ''; } };
+
+/* ---------- Agenda ---------- */
+function vAgenda() {
+  const url = S.cfg.agenda_url;
+  let corpo;
+  if (url && store.mode !== 'demo') corpo = `<div class="cal-frame"><iframe src="${esc(url)}" title="Agenda da clínica" loading="lazy"></iframe></div>
+    <p class="muted small">Não aparece nenhum evento? Entre no Google com a conta que tem acesso à agenda da clínica, ou peça à administração para compartilhá-la com o seu e-mail.</p>`;
+  else if (url) corpo = `<div class="empty">Agenda vinculada. Na versão publicada, a agenda do Google aparece aqui, dentro do painel. A prévia não exibe páginas de outros sites.</div>`;
+  else corpo = `<div class="empty stack" style="gap:8px"><b style="color:var(--ink)">Nenhuma agenda vinculada ainda.</b><span>${ehGestor() ? 'Cole o link de incorporação do Google Agenda em Administração > Configurações.' : 'A administração da clínica ainda não vinculou a agenda.'}</span>${ehGestor() ? `<button class="btn btn-quiet btn-sm" data-act="go" data-v="admin" data-atab="config" style="align-self:flex-start">Vincular agenda</button>` : ''}</div>`;
+  return `${voltar()}<div class="page-head"><div class="stack" style="gap:4px"><h1>Agenda</h1><p class="muted">Agenda compartilhada da clínica.</p></div>
+    <a class="btn btn-quiet" href="https://calendar.google.com/calendar/r" target="_blank" rel="noopener noreferrer">Abrir no Google Agenda ${IC.ext}</a></div>${corpo}`;
+}
+
+/* ---------- Pacientes ---------- */
+function linhasPacientes() {
+  const q = normaliza(S.busca);
+  const lista = S.pacientes.filter(p => !q || normaliza(p.nome).includes(q) || normaliza(p.telefone).includes(q) || normaliza(p.email).includes(q));
+  if (!S.pacientes.length) return `<div class="empty">Nenhum paciente cadastrado ainda. Use <b>Novo paciente</b> para começar.</div>`;
+  if (!lista.length) return `<div class="empty">Nenhum paciente encontrado para “${esc(S.busca)}”.</div>`;
+  return `<div class="plist" role="list">
+    <div class="prow head" aria-hidden="true"><span>Nome</span><span class="c-age">Idade</span><span class="c-tel">Telefone</span><span>Acesso</span></div>
+    ${lista.map(p => { const i = idade(p.nascimento); return `<button class="prow" role="listitem" data-act="abrir-pac" data-id="${esc(p.id)}">
+      <span class="nm">${esc(p.nome)}</span><span class="c-age tnum muted">${i !== null ? i + ' anos' : '—'}</span><span class="c-tel tnum muted">${esc(p.telefone || '—')}</span>
+      <span>${p.user_id ? '<span class="chip chip-good">Com acesso</span>' : '<span class="chip">Sem acesso</span>'}</span></button>`; }).join('')}
+  </div><p class="faint small tnum">${lista.length} de ${S.pacientes.length} pacientes</p>`;
+}
+function vPacientes() {
+  return `${voltar()}${msgBox()}
+  <div class="page-head"><div class="stack" style="gap:4px"><h1>Pacientes</h1><p class="muted">${papel() === 'recepcao' ? 'Cadastro e contato. As fichas clínicas ficam com os profissionais.' : 'Abra o paciente para ver o cadastro e as fichas das suas especialidades.'}</p></div>
+    <button class="btn btn-primary" data-act="novo-pac">Novo paciente</button></div>
+  <div class="field" style="max-width:460px"><label for="busca">Buscar</label><input id="busca" type="search" placeholder="Nome, telefone ou e-mail" value="${esc(S.busca)}" autocomplete="off"></div>
+  <div id="lista-pac" class="stack" style="gap:10px">${linhasPacientes()}</div>`;
+}
+function vPacienteForm() {
+  const p = S.pform || {};
+  const v = (k) => esc(p[k] || '');
+  return `${p.id ? `<a class="back" href="#paciente-${esc(p.id)}" data-act="abrir-pac" data-id="${esc(p.id)}">${IC.back}Voltar à ficha</a>` : voltar('pacientes', 'Voltar aos pacientes')}
+  <h1>${p.id ? 'Editar cadastro' : 'Novo paciente'}</h1>
+  <form class="card stack" data-form="paciente" novalidate>
+    <div class="grid-2">
+      <div class="field span-2"><label for="pf-nome">Nome completo</label><input id="pf-nome" name="nome" type="text" value="${v('nome')}" required data-autofocus></div>
+      <div class="field"><label for="pf-nasc">Data de nascimento</label><input id="pf-nasc" name="nascimento" type="date" value="${v('nascimento')}"></div>
+      <div class="field"><label for="pf-cpf">CPF</label><input id="pf-cpf" name="cpf" type="text" inputmode="numeric" value="${v('cpf')}"></div>
+      <div class="field"><label for="pf-tel">Telefone</label><input id="pf-tel" name="telefone" type="tel" value="${v('telefone')}"></div>
+      <div class="field"><label for="pf-email">E-mail</label><input id="pf-email" name="email" type="email" value="${v('email')}"><span class="hint">Com o e-mail cadastrado, o paciente cria a própria senha em Criar acesso e entra direto na área dele.</span></div>
+      <div class="field span-2"><label for="pf-end">Endereço</label><input id="pf-end" name="endereco" type="text" value="${v('endereco')}"></div>
+      <div class="field span-2"><label for="pf-emerg">Contato de emergência</label><input id="pf-emerg" name="contato_emergencia" type="text" value="${v('contato_emergencia')}" placeholder="Nome, parentesco e telefone"></div>
+      <div class="field span-2"><label for="pf-obs">Observações</label><textarea id="pf-obs" name="observacoes">${v('observacoes')}</textarea><span class="hint">Informações administrativas. Dados clínicos vão na ficha da especialidade.</span></div>
+    </div>
+    ${msgBox()}
+    <div class="row"><button class="btn btn-primary" type="submit" ${S.busy ? 'disabled' : ''}>${p.id ? 'Salvar alterações' : 'Cadastrar paciente'}</button></div>
+  </form>`;
+}
+
+/* ---------- Ficha do paciente ---------- */
+function vPaciente() {
+  const p = S.pac;
+  if (!p) return `${voltar('pacientes', 'Voltar aos pacientes')}${msgBox()}`;
+  const i = idade(p.nascimento);
+  const espsVis = S.esps.filter(e => e.ativa !== false && nivelEm(e.id));
+  const tabs = [`<button role="tab" aria-selected="${S.ptab === 'cadastro'}" data-act="ptab" data-t="cadastro">Cadastro</button>`]
+    .concat(espsVis.map(e => `<button role="tab" aria-selected="${S.ptab === e.id}" data-act="ptab" data-t="${esc(e.id)}" style="--tabc:${esc(e.cor)}"><span class="dot" style="background:${esc(e.cor)}"></span>${esc(e.nome)}</button>`));
+  let corpo = '';
+  if (S.ptab === 'cadastro') {
+    corpo = `<dl class="dl">${CAMPOS_PACIENTE.map(([k, t]) => `<div><dt>${t}</dt><dd>${k === 'nascimento' ? (p[k] ? fmtData(p[k]) + (i !== null ? ` · ${i} anos` : '') : '—') : esc(p[k] || '—')}</dd></div>`).join('')}
+      <div><dt>Acesso do paciente</dt><dd>${p.user_id ? '<span class="chip chip-good">Conta vinculada</span>' : p.email ? 'Sem conta ainda. O paciente cria o acesso com o e-mail cadastrado.' : 'Sem e-mail cadastrado.'}</dd></div></dl>
+      ${!espsVis.length ? `<div class="lock">${IC.lock}<span>As fichas clínicas abrem só para profissionais com permissão na especialidade. ${ehGestor() ? 'Você define as permissões, inclusive as suas, em Administração > Usuários.' : ''}</span></div>` : ''}`;
+  } else {
+    const esp = S.esps.find(e => e.id === S.ptab);
+    corpo = esp ? vFichaEsp(esp) : '';
+  }
+  return `${voltar('pacientes', 'Voltar aos pacientes')}${msgBox()}
+  <section class="pac-head"><div class="stack" style="gap:8px"><h1>${esc(p.nome)}</h1>
+    <div class="pac-meta tnum">${i !== null ? `<span>${i} anos</span>` : ''}${p.telefone ? `<span>${esc(p.telefone)}</span>` : ''}${p.email ? `<span>${esc(p.email)}</span>` : ''}</div></div>
+    <button class="btn btn-quiet btn-sm" data-act="editar-pac">Editar cadastro</button></section>
+  <div class="tabs" role="tablist" aria-label="Ficha">${tabs.join('')}</div>
+  <section class="stack">${corpo}</section>`;
+}
+function vFichaEsp(esp) {
+  const nv = nivelEm(esp.id); const escr = nv === 'escrita';
+  const sub = `<div class="spread"><div class="subtabs" role="tablist"><button role="tab" aria-selected="${S.psub === 'anamnese'}" data-act="psub" data-t="anamnese">Anamnese</button><button role="tab" aria-selected="${S.psub === 'atendimentos'}" data-act="psub" data-t="atendimentos">Atendimentos <span class="tnum faint">${S.atend.length}</span></button></div>
+    ${escr ? '' : '<span class="chip chip-warn">Somente leitura</span>'}</div>`;
+  const campos = ANAMNESE_BASE.concat((esp.campos || []).filter(Boolean).map(c => ({ k: 'extra:' + c, t: c, extra: true })));
+  if (S.psub === 'anamnese') {
+    const d = S.anam?.dados || {};
+    const rodape = S.anam ? `<p class="faint small">Última alteração em ${esc(fmtDataHora(S.anam.updated_at))}${S.anam.autor ? ' por ' + esc(S.anam.autor) : ''}.</p>` : '';
+    if (escr) return `${sub}<form class="card stack" data-form="anamnese" novalidate>
+      <div class="grid-2">${campos.map((c, ix) => `<div class="field ${['queixa', 'hda', 'obs'].includes(c.k) || c.extra ? 'span-2' : ''}"><label for="an-${ix}">${esc(c.t)}${c.extra ? ` <span class="chip" style="font-size:11px;padding:1px 8px">${esc(esp.nome)}</span>` : ''}</label>${c.h ? `<span class="hint">${esc(c.h)}</span>` : ''}<textarea id="an-${ix}" name="${esc(c.k)}" rows="3">${esc(d[c.k] || '')}</textarea></div>`).join('')}</div>
+      ${rodape}<div class="row"><button class="btn btn-primary" type="submit" ${S.busy ? 'disabled' : ''}>Salvar anamnese</button></div></form>`;
+    const preench = campos.filter(c => (d[c.k] || '').trim());
+    return `${sub}<div class="card stack">${preench.length ? `<dl class="dl">${preench.map(c => `<div><dt>${esc(c.t)}</dt><dd>${esc(d[c.k])}</dd></div>`).join('')}</dl>${rodape}` : '<p class="muted">Anamnese ainda não preenchida nesta especialidade.</p>'}</div>`;
+  }
+  const ed = S.editAt;
+  const form = escr ? `<form class="card stack" data-form="atendimento" novalidate>
+      <h3>${ed ? 'Editar atendimento' : 'Registrar atendimento'}</h3>
+      <div class="grid-3">
+        <div class="field"><label for="at-data">Data</label><input id="at-data" name="data" type="date" value="${esc(ed?.data || hojeISO())}" required></div>
+        <div class="field"><label for="at-tipo">Tipo</label><select id="at-tipo" name="tipo">${TIPOS.map(t => `<option ${((ed?.tipo) || 'Sessão') === t ? 'selected' : ''}>${t}</option>`).join('')}</select></div>
+        <div class="field span-3"><label for="at-reg">Evolução</label><textarea id="at-reg" name="registro" rows="4" required placeholder="O que foi trabalhado, relato do paciente, observações da sessão">${esc(ed?.registro || '')}</textarea></div>
+        <div class="field span-3"><label for="at-cond">Conduta</label><textarea id="at-cond" name="conduta" rows="2" placeholder="Plano, orientações e próximos passos">${esc(ed?.conduta || '')}</textarea></div>
+      </div>
+      <div class="row"><button class="btn btn-primary" type="submit" ${S.busy ? 'disabled' : ''}>${ed ? 'Salvar alterações' : 'Registrar'}</button>${ed ? '<button class="btn btn-quiet" type="button" data-act="cancelar-at">Cancelar</button>' : ''}</div>
+    </form>` : '';
+  const lista = S.atend.length ? `<div class="card"><div class="stack" style="gap:0">${S.atend.map(a => { const [y, m, dd] = a.data.split('-'); return `<article class="evo">
+      <div class="evo-date tnum"><b>${dd}</b><span>${MESES[+m - 1]} ${y}</span></div>
+      <div class="evo-body"><div class="row" style="gap:8px"><span class="chip chip-accent">${esc(a.tipo)}</span><span class="small muted">${esc(a.profissional)}</span>
+        ${escr && a.profissional_id === S.perfil.id ? `<button class="btn-ghost btn-sm" data-act="editar-at" data-id="${esc(a.id)}" style="min-height:32px;padding:2px 8px;margin-left:auto">Editar</button>` : ''}</div>
+        <span class="evo-k">Evolução</span><p>${esc(a.registro)}</p>
+        ${a.conduta ? `<span class="evo-k">Conduta</span><p>${esc(a.conduta)}</p>` : ''}</div></article>`; }).join('')}</div></div>`
+    : `<div class="empty">Nenhum atendimento registrado nesta especialidade.</div>`;
+  return `${sub}${form}${lista}`;
+}
+
+/* ---------- Meus dados (paciente) ---------- */
+function vMeusDados() {
+  const p = S.pac;
+  return `${voltar()}${msgBox()}<h1>Meus dados</h1>
+  ${p ? `<div class="card stack"><dl class="dl">${CAMPOS_PACIENTE.filter(([k]) => k !== 'observacoes').map(([k, t]) => `<div><dt>${t}</dt><dd>${k === 'nascimento' ? (p[k] ? fmtData(p[k]) : '—') : esc(p[k] || '—')}</dd></div>`).join('')}</dl>
+  <p class="muted small">Para corrigir algum dado, fale com a recepção da clínica.</p></div>` : `<div class="empty">Não encontramos o seu cadastro. Fale com a recepção.</div>`}`;
+}
+
+/* ---------- Administração ---------- */
+function vAdmin() {
+  const tabs = [['usuarios', 'Usuários'], ['especialidades', 'Especialidades'], ['atalhos', 'Atalhos'], ['config', 'Configurações'], ['auditoria', 'Auditoria']];
+  const corpo = { usuarios: aUsuarios, especialidades: aEsps, atalhos: aAtalhos, config: aConfig, auditoria: aAuditoria }[S.atab]();
+  return `${voltar()}<div class="stack" style="gap:4px"><h1>Administração</h1><p class="muted">Quem acessa o quê na clínica.</p></div>
+  <div class="tabs" role="tablist" aria-label="Administração">${tabs.map(([k, t]) => `<button role="tab" aria-selected="${S.atab === k}" data-act="atab" data-t="${k}">${t}</button>`).join('')}</div>
+  ${msgBox()}<section class="stack">${corpo}</section>`;
+}
+function aUsuarios() {
+  const eu = papel();
+  const ordem = { pendente: 0, mestre: 1, admin: 2, profissional: 3, recepcao: 4, paciente: 5 };
+  const us = [...S.usuarios].sort((a, b) => (ordem[a.papel] - ordem[b.papel]) || a.nome.localeCompare(b.nome));
+  const pend = us.filter(u => u.papel === 'pendente').length;
+  const opcoes = Object.keys(PAPEIS).filter(k => eu === 'mestre' || !GESTOR.includes(k));
+  return `<p class="muted">${pend ? `<b style="color:var(--warn)">${pend} ${pend === 1 ? 'conta aguarda' : 'contas aguardam'} liberação.</b> ` : ''}Defina o perfil de cada pessoa e, para quem atende, o acesso a cada especialidade. Ninguém vê uma ficha clínica sem permissão na especialidade, nem os administradores.</p>
+  ${us.map(u => {
+    const self = u.id === S.perfil.id;
+    const travado = self || (eu !== 'mestre' && GESTOR.includes(u.papel));
+    const permsTravadas = eu !== 'mestre' && GESTOR.includes(u.papel);
+    const clin = CLINICOS.includes(u.papel);
+    return `<form class="card ucard ${u.papel === 'pendente' ? 'pend' : ''}" data-form="usuario" data-id="${esc(u.id)}" novalidate>
+      <div class="spread"><div class="stack" style="gap:2px;min-width:0"><b style="font-size:17px">${esc(u.nome)}${self ? ' <span class="chip">Você</span>' : ''}</b><span class="small muted" style="overflow-wrap:anywhere">${esc(u.email)}</span></div>
+        ${u.papel === 'pendente' ? '<span class="chip chip-warn">Aguardando liberação</span>' : !u.ativo ? '<span class="chip chip-crit">Inativo</span>' : `<span class="chip chip-accent">${esc(PAPEIS[u.papel])}</span>`}</div>
+      <div class="grid-3">
+        <div class="field"><label for="pp-${esc(u.id)}">Perfil</label><select id="pp-${esc(u.id)}" name="papel" ${travado ? 'disabled' : ''} data-act-change="papel-muda">${(travado ? Object.keys(PAPEIS) : opcoes).map(k => `<option value="${k}" ${u.papel === k ? 'selected' : ''}>${PAPEIS[k]}</option>`).join('')}</select></div>
+        <div class="field"><label for="rg-${esc(u.id)}">Registro profissional</label><input id="rg-${esc(u.id)}" name="registro" type="text" value="${esc(u.registro_profissional || '')}" placeholder="CRP, CRM, CREFITO…" ${travado ? 'disabled' : ''}></div>
+        <div class="field"><span class="lbl">Situação</span><label class="check"><input type="checkbox" name="ativo" ${u.ativo ? 'checked' : ''} ${travado ? 'disabled' : ''}> Acesso ativo</label></div>
+      </div>
+      <div class="stack perm-box" style="gap:8px" ${clin ? '' : 'hidden'}>
+        <span class="lbl">Fichas clínicas por especialidade</span>
+        ${S.esps.length ? `<div class="perm-grid">${S.esps.map(e => `<div class="perm"><span class="lbl"><span class="dot" style="background:${esc(e.cor)}"></span>${esc(e.nome)}</span>
+          <select name="perm:${esc(e.id)}" aria-label="Acesso a ${esc(e.nome)}" ${permsTravadas ? 'disabled' : ''}><option value="">Sem acesso</option><option value="leitura" ${u.permissoes[e.id] === 'leitura' ? 'selected' : ''}>Leitura</option><option value="escrita" ${u.permissoes[e.id] === 'escrita' ? 'selected' : ''}>Leitura e escrita</option></select></div>`).join('')}</div>` : '<p class="muted small">Cadastre as especialidades primeiro.</p>'}
+      </div>
+      ${self ? '<p class="faint small">O seu perfil não muda por aqui. As suas permissões clínicas, sim.</p>' : ''}
+      ${u.papel === 'paciente' ? '<p class="faint small">Pacientes são vinculados à ficha pelo e-mail do cadastro.</p>' : ''}
+      <div class="row"><button class="btn btn-primary btn-sm" type="submit" ${permsTravadas && travado ? 'disabled' : ''}>Salvar</button></div>
+    </form>`;
+  }).join('')}`;
+}
+function aEsps() {
+  const card = (e) => `<form class="card stack" data-form="esp" data-id="${esc(e?.id || '')}" novalidate>
+      ${e ? '' : '<h3>Nova especialidade</h3>'}
+      <div class="grid-3">
+        <div class="field span-2"><label for="es-n-${esc(e?.id || 'nova')}">Nome</label><input id="es-n-${esc(e?.id || 'nova')}" name="nome" type="text" value="${esc(e?.nome || '')}" required></div>
+        <div class="field"><label for="es-c-${esc(e?.id || 'nova')}">Cor</label><div class="row" style="gap:10px"><input id="es-c-${esc(e?.id || 'nova')}" name="cor" type="color" value="${esc(e?.cor || '#2E6B5F')}"><label class="check"><input type="checkbox" name="ativa" ${!e || e.ativa !== false ? 'checked' : ''}> Ativa</label></div></div>
+        <div class="field span-3"><label for="es-f-${esc(e?.id || 'nova')}">Campos próprios da anamnese</label><textarea id="es-f-${esc(e?.id || 'nova')}" name="campos" rows="3" placeholder="Um campo por linha">${esc((e?.campos || []).join('\n'))}</textarea><span class="hint">Entram na anamnese desta especialidade, depois dos campos comuns (queixa principal, história da queixa, histórico de saúde, medicações, alergias, hábitos, histórico familiar, objetivos e observações).</span></div>
+      </div>
+      <div class="row"><button class="btn ${e ? 'btn-quiet' : 'btn-primary'} btn-sm" type="submit">${e ? 'Salvar' : 'Adicionar especialidade'}</button></div></form>`;
+  return `<p class="muted">Cada especialidade tem a sua ficha no paciente: anamnese e atendimentos próprios.</p>${S.esps.map(card).join('')}${card(null)}`;
+}
+function aAtalhos() {
+  const ed = S.editLink;
+  const alvoTxt = (a) => ({ todos: 'Todos', equipe: 'Toda a equipe', pacientes: 'Pacientes', selecionados: `${(a.usuarios || []).length} ${(a.usuarios || []).length === 1 ? 'pessoa' : 'pessoas'}` }[a.alvo]);
+  const pessoas = S.usuarios.filter(u => u.papel !== 'pendente');
+  const lista = S.atalhos.length ? `<div class="table-wrap"><table><thead><tr><th>Atalho</th><th>Para quem</th><th>Situação</th><th></th></tr></thead><tbody>
+    ${S.atalhos.map(a => `<tr><td><b>${esc(a.titulo)}</b><br><span class="small muted" style="overflow-wrap:anywhere">${esc(a.url)}</span></td><td>${esc(alvoTxt(a))}</td><td>${a.ativo ? '<span class="chip chip-good">Ativo</span>' : '<span class="chip">Oculto</span>'}</td>
+      <td style="white-space:nowrap">${S.confirmDel === a.id ? `<span class="confirm">Remover? <button class="btn btn-danger btn-sm" data-act="del-link" data-id="${esc(a.id)}">Remover</button><button class="btn-ghost btn-sm" data-act="cancel-del">Cancelar</button></span>` : `<button class="btn-ghost btn-sm" data-act="edit-link" data-id="${esc(a.id)}">Editar</button><button class="btn-ghost btn-sm" data-act="ask-del" data-id="${esc(a.id)}">Remover</button>`}</td></tr>`).join('')}
+    </tbody></table></div>` : `<div class="empty">Nenhum atalho cadastrado.</div>`;
+  const alvo = ed?.alvo || 'equipe';
+  return `<p class="muted">Atalhos viram botões no painel e abrem o site em uma nova aba. Escolha quem vê cada um.</p>${lista}
+  <form class="card stack" data-form="atalho" novalidate>
+    <h3>${ed ? 'Editar atalho' : 'Novo atalho'}</h3>
+    <div class="grid-3">
+      <div class="field"><label for="lk-t">Título</label><input id="lk-t" name="titulo" type="text" value="${esc(ed?.titulo || '')}" required placeholder="Rede Ayla"></div>
+      <div class="field span-2"><label for="lk-u">Endereço</label><input id="lk-u" name="url" type="url" value="${esc(ed?.url || '')}" required placeholder="https://"></div>
+      <div class="field span-2"><label for="lk-d">Descrição</label><input id="lk-d" name="descricao" type="text" value="${esc(ed?.descricao || '')}" placeholder="Aparece no botão, abaixo do título"></div>
+      <div class="field"><label for="lk-c">Cor</label><div class="row" style="gap:10px"><input id="lk-c" name="cor" type="color" value="${esc(ed?.cor || '#2E6B5F')}"><label class="check"><input type="checkbox" name="ativo" ${!ed || ed.ativo ? 'checked' : ''}> Visível</label></div></div>
+    </div>
+    <fieldset class="stack" style="gap:8px;border:0;padding:0;margin:0"><legend class="lbl" style="margin-bottom:8px">Quem vê</legend>
+      <div class="row" style="gap:4px 18px">${[['equipe', 'Toda a equipe'], ['pacientes', 'Pacientes'], ['todos', 'Todos'], ['selecionados', 'Pessoas escolhidas']].map(([k, t]) => `<label class="check"><input type="radio" name="alvo" value="${k}" ${alvo === k ? 'checked' : ''} data-act-change="alvo-muda"> ${t}</label>`).join('')}</div>
+      <div class="pessoas perm-grid" ${alvo === 'selecionados' ? '' : 'hidden'}>${pessoas.map(u => `<label class="check perm" style="flex-direction:row"><input type="checkbox" name="usuarios" value="${esc(u.id)}" ${(ed?.usuarios || []).includes(u.id) ? 'checked' : ''}> <span>${esc(u.nome)}<br><span class="faint small">${esc(PAPEIS[u.papel])}</span></span></label>`).join('')}</div>
+    </fieldset>
+    <div class="row"><button class="btn btn-primary btn-sm" type="submit">${ed ? 'Salvar atalho' : 'Adicionar atalho'}</button>${ed ? '<button class="btn btn-quiet btn-sm" type="button" data-act="cancel-link">Cancelar</button>' : ''}</div>
+  </form>`;
+}
+function aConfig() {
+  return `<form class="card stack" data-form="cfg-nome" novalidate><h3>Nome da clínica</h3>
+    <div class="field" style="max-width:460px"><label for="cf-nome">Nome exibido no topo e na tela de entrada</label><input id="cf-nome" name="nome" type="text" value="${esc(nomeClinica())}" required></div>
+    <div class="row"><button class="btn btn-quiet btn-sm" type="submit">Salvar nome</button></div></form>
+  <form class="card stack" data-form="cfg-agenda" novalidate><h3>Agenda compartilhada (Google Agenda)</h3>
+    <ol class="steps"><li>Abra o Google Agenda no computador, com a conta dona da agenda da clínica.</li><li>Em Configurações, escolha a agenda da clínica em “Configurações das minhas agendas”.</li><li>Na seção “Integrar agenda”, copie o código de incorporação.</li><li>Cole aqui e salve.</li></ol>
+    <div class="field"><label for="cf-ag">Código de incorporação ou link</label><textarea id="cf-ag" name="agenda" rows="3" placeholder="&lt;iframe src=&quot;https://calendar.google.com/calendar/embed?src=…&quot;…">${esc(S.cfg.agenda_url || '')}</textarea>
+      <span class="hint">Os eventos aparecem para quem estiver conectado ao Google com uma conta que tenha acesso à agenda. Compartilhe a agenda no Google com o e-mail de cada pessoa da equipe.</span></div>
+    <div class="row"><button class="btn btn-primary btn-sm" type="submit">Salvar agenda</button>${S.cfg.agenda_url ? '<button class="btn btn-quiet btn-sm" type="button" data-act="desvincular-agenda">Desvincular</button>' : ''}</div></form>`;
+}
+function aAuditoria() {
+  if (!S.audit.length) return `<div class="empty">Nenhum registro ainda. Aqui aparecem cadastros, consultas e alterações de fichas e mudanças de acesso.</div>`;
+  return `<p class="muted">Últimos ${S.audit.length} registros.</p><div class="table-wrap"><table><thead><tr><th>Quando</th><th>Quem</th><th>Ação</th><th>Paciente</th><th>Detalhe</th></tr></thead><tbody>
+    ${S.audit.map(r => `<tr><td class="tnum" style="white-space:nowrap">${esc(fmtDataHora(r.criado_em))}</td><td>${esc(r.usuario || '—')}</td><td>${esc(r.acao)}</td><td>${esc(r.paciente || '—')}</td><td>${esc(r.detalhe || '')}</td></tr>`).join('')}
+  </tbody></table></div>`;
+}
+
+/* ============================== AÇÕES ============================== */
+async function aposLogin() {
+  S.session = await store.session();
+  S.perfil = S.session ? await store.perfil() : null;
+  try { S.cfg = await store.config(); } catch (e) { S.cfg = {}; }
+  S.abertos = new Set();
+  if (S.perfil) await rota(); else render();
+}
+async function tentar(fn, okMsg) {
+  S.busy = true;
+  try { await fn(); if (okMsg) S.msg = { t: okMsg }; }
+  catch (e) { S.msg = { err: true, t: e.message || 'Não foi possível concluir. Tente de novo.' }; }
+  finally { S.busy = false; }
+}
+
+document.addEventListener('click', async (ev) => {
+  const t = ev.target.closest('[data-act]'); if (!t) return;
+  const act = t.dataset.act;
+  if (t.tagName === 'A' || act !== 'go') ev.preventDefault();
+  if (act === 'go') { ev.preventDefault(); if (t.dataset.atab) S.atab = t.dataset.atab; go(t.dataset.v); }
+  else if (act === 'sair') { await store.signOut(); Object.assign(S, { session: null, perfil: null, view: 'login', authTab: 'entrar', authMsg: null, msg: null }); try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {} render(); }
+  else if (act === 'trocar') { await store.signOut(); Object.assign(S, { session: null, perfil: null, view: 'login', authMsg: null, msg: null }); render(); }
+  else if (act === 'auth-tab') { S.authTab = t.dataset.t; S.authMsg = null; render(); }
+  else if (act === 'demo-entrar') { await store.signInAs(t.dataset.id); location.hash = ''; await aposLogin(); }
+  else if (act === 'demo-reset') { await store.reset(); S.authMsg = { ok: true, t: 'Dados de exemplo restaurados.' }; render(); }
+  else if (act === 'novo-pac') { S.pform = {}; go('paciente-form'); }
+  else if (act === 'abrir-pac') { S.pid = t.dataset.id; S.ptab = 'cadastro'; S.psub = 'anamnese'; go('paciente'); }
+  else if (act === 'editar-pac') { S.pform = { ...S.pac }; go('paciente-form'); }
+  else if (act === 'ptab') { S.ptab = t.dataset.t; S.psub = 'anamnese'; S.msg = null; try { await carregarFicha(); } catch (e) { S.msg = { err: true, t: e.message }; } render(); }
+  else if (act === 'psub') { S.psub = t.dataset.t; S.editAt = null; S.msg = null; render(); }
+  else if (act === 'editar-at') { S.editAt = S.atend.find(a => a.id === t.dataset.id) || null; render(); $('#at-reg')?.focus(); }
+  else if (act === 'cancelar-at') { S.editAt = null; render(); }
+  else if (act === 'atab') { S.atab = t.dataset.t; S.editLink = null; S.confirmDel = null; S.msg = null; await carregar(); render(); }
+  else if (act === 'edit-link') { S.editLink = { ...S.atalhos.find(a => a.id === t.dataset.id) }; render(); $('#lk-t')?.focus(); }
+  else if (act === 'cancel-link') { S.editLink = null; render(); }
+  else if (act === 'ask-del') { S.confirmDel = t.dataset.id; render(); }
+  else if (act === 'cancel-del') { S.confirmDel = null; render(); }
+  else if (act === 'del-link') { await tentar(() => store.removerAtalho(t.dataset.id), 'Atalho removido.'); S.confirmDel = null; S.atalhos = await store.atalhos(); render(); }
+  else if (act === 'desvincular-agenda') { await tentar(() => store.salvarConfig('agenda_url', ''), 'Agenda desvinculada.'); S.cfg = await store.config(); render(); }
+});
+
+document.addEventListener('input', (ev) => {
+  if (ev.target.id === 'busca') { S.busca = ev.target.value; const l = $('#lista-pac'); if (l) l.innerHTML = linhasPacientes(); }
+});
+document.addEventListener('change', (ev) => {
+  const a = ev.target.dataset.actChange;
+  if (a === 'papel-muda') { const box = ev.target.closest('form').querySelector('.perm-box'); if (box) box.hidden = !CLINICOS.includes(ev.target.value); }
+  if (a === 'alvo-muda') { const box = ev.target.closest('form').querySelector('.pessoas'); if (box) box.hidden = ev.target.value !== 'selecionados'; }
+});
+
+document.addEventListener('submit', async (ev) => {
+  const f = ev.target.closest('form[data-form]'); if (!f) return;
+  ev.preventDefault();
+  const kind = f.dataset.form;
+  const fd = new FormData(f);
+  const val = (k) => String(fd.get(k) ?? '').trim();
+  S.msg = null;
+
+  if (kind === 'entrar') {
+    if (!val('email') || !fd.get('pw')) { S.authMsg = { t: 'Informe o e-mail e a senha.' }; return render(); }
+    S.busy = true; render();
+    try { await store.signIn(val('email'), fd.get('pw')); S.authMsg = null; S.busy = false; await aposLogin(); }
+    catch (e) { S.busy = false; S.authMsg = { t: e.message }; render(); }
+  }
+  else if (kind === 'criar') {
+    if (!val('nome') || !val('email') || String(fd.get('pw')).length < 6) { S.authMsg = { t: 'Preencha nome, e-mail e uma senha com pelo menos 6 caracteres.' }; return render(); }
+    S.busy = true; render();
+    try {
+      const r = await store.signUp(val('nome'), val('email'), fd.get('pw')); S.busy = false;
+      if (r.confirmar) { S.authTab = 'entrar'; S.authMsg = { ok: true, t: 'Conta criada. Confirme o e-mail pelo link que enviamos e depois entre.' }; render(); }
+      else { S.authMsg = null; await aposLogin(); }
+    } catch (e) { S.busy = false; S.authMsg = { t: e.message }; render(); }
+  }
+  else if (kind === 'esqueci') {
+    if (!val('email')) { S.authMsg = { t: 'Informe o e-mail.' }; return render(); }
+    try { const r = await store.resetPassword(val('email')); S.authMsg = { ok: true, t: r.demo ? 'Na prévia não há envio de e-mail. Na versão publicada, a pessoa recebe um link para criar uma nova senha.' : 'Se houver uma conta com esse e-mail, você vai receber um link para criar uma nova senha.' }; }
+    catch (e) { S.authMsg = { t: e.message }; }
+    render();
+  }
+  else if (kind === 'nova-senha') {
+    await tentar(() => store.novaSenha(fd.get('pw')), null);
+    if (!S.msg) { S.view = 'painel'; await aposLogin(); } else render();
+  }
+  else if (kind === 'paciente') {
+    if (!val('nome')) { S.msg = { err: true, t: 'Informe o nome do paciente.' }; S.pform = { ...S.pform, ...Object.fromEntries(fd) }; return render(); }
+    const dados = { id: S.pform?.id }; CAMPOS_PACIENTE.forEach(([k]) => dados[k] = val(k));
+    let salvo = null;
+    await tentar(async () => { salvo = await store.salvarPaciente(dados); });
+    if (salvo) { S.pid = salvo.id; S.ptab = 'cadastro'; go('paciente', { msg: { t: dados.id ? 'Cadastro atualizado.' : 'Paciente cadastrado.' } }); }
+    else { S.pform = dados; render(); }
+  }
+  else if (kind === 'anamnese') {
+    const dados = {}; for (const [k, v] of fd.entries()) { if (String(v).trim()) dados[k] = String(v).trim(); }
+    await tentar(() => store.salvarAnamnese(S.pid, S.ptab, dados), 'Anamnese salva.');
+    S.anam = await store.anamnese(S.pid, S.ptab).catch(() => S.anam); render();
+  }
+  else if (kind === 'atendimento') {
+    if (!val('registro') || !val('data')) { S.msg = { err: true, t: 'Informe a data e a evolução do atendimento.' }; return render(); }
+    const a = { id: S.editAt?.id, paciente_id: S.pid, especialidade_id: S.ptab, data: val('data'), tipo: val('tipo'), registro: val('registro'), conduta: val('conduta') };
+    await tentar(() => store.salvarAtendimento(a), a.id ? 'Atendimento atualizado.' : 'Atendimento registrado.');
+    if (!S.msg?.err) S.editAt = null;
+    S.atend = await store.atendimentos(S.pid, S.ptab).catch(() => S.atend); render();
+  }
+  else if (kind === 'usuario') {
+    const id = f.dataset.id; const u = S.usuarios.find(x => x.id === id);
+    const np = fd.get('papel') ?? u.papel;
+    const lista = S.esps.map(e => ({ especialidade_id: e.id, nivel: fd.get('perm:' + e.id) ?? u.permissoes[e.id] ?? '' })).filter(x => x.nivel);
+    const self = id === S.perfil.id; const travado = self || (papel() !== 'mestre' && GESTOR.includes(u.papel));
+    await tentar(async () => {
+      if (!travado) await store.atualizarUsuario(id, { papel: np, ativo: fd.get('ativo') === 'on', registro: val('registro') });
+      if (CLINICOS.includes(np) && !(papel() !== 'mestre' && GESTOR.includes(u.papel))) await store.definirPermissoes(id, lista);
+      else if (!CLINICOS.includes(np) && Object.keys(u.permissoes).length) await store.definirPermissoes(id, []);
+    }, `Acesso de ${u.nome} atualizado.`);
+    S.usuarios = await store.usuarios(); if (self) S.perfil = await store.perfil(); render();
+  }
+  else if (kind === 'esp') {
+    if (!val('nome')) { S.msg = { err: true, t: 'Informe o nome da especialidade.' }; return render(); }
+    const e = { id: f.dataset.id || undefined, nome: val('nome'), cor: val('cor') || '#2E6B5F', ativa: fd.get('ativa') === 'on', campos: val('campos').split('\n').map(s => s.trim()).filter(Boolean) };
+    await tentar(() => store.salvarEspecialidade(e), e.id ? 'Especialidade salva.' : 'Especialidade adicionada.');
+    S.esps = await store.especialidades(); render();
+  }
+  else if (kind === 'atalho') {
+    const url = val('url');
+    if (!val('titulo') || !safeUrl(url)) { S.msg = { err: true, t: 'Informe o título e um endereço começando com https://' }; return render(); }
+    const a = { id: S.editLink?.id, titulo: val('titulo'), url, descricao: val('descricao'), cor: val('cor') || '#2E6B5F', ativo: fd.get('ativo') === 'on', alvo: val('alvo') || 'equipe', usuarios: fd.getAll('usuarios').map(String) };
+    if (a.alvo === 'selecionados' && !a.usuarios.length) { S.msg = { err: true, t: 'Escolha pelo menos uma pessoa para ver este atalho.' }; S.editLink = a; return render(); }
+    if (a.alvo !== 'selecionados') a.usuarios = [];
+    await tentar(() => store.salvarAtalho(a), a.id ? 'Atalho salvo.' : 'Atalho adicionado ao painel.');
+    if (!S.msg?.err) S.editLink = null;
+    S.atalhos = await store.atalhos(); render();
+  }
+  else if (kind === 'cfg-nome') {
+    if (!val('nome')) { S.msg = { err: true, t: 'Informe o nome da clínica.' }; return render(); }
+    await tentar(() => store.salvarConfig('nome_clinica', val('nome')), 'Nome da clínica salvo.');
+    S.cfg = await store.config(); render();
+  }
+  else if (kind === 'cfg-agenda') {
+    const bruto = val('agenda');
+    const m = bruto.match(/src\s*=\s*["']([^"']+)["']/i);
+    const url = (m ? m[1] : bruto).replace(/&amp;/g, '&');
+    if (!/^https:\/\/calendar\.google\.com\/calendar\/(embed|u\/\d+\/embed)/i.test(url)) { S.msg = { err: true, t: 'Cole o código de incorporação do Google Agenda (o link começa com https://calendar.google.com/calendar/embed).' }; return render(); }
+    await tentar(() => store.salvarConfig('agenda_url', url), 'Agenda vinculada. Ela aparece em Agenda, no painel.');
+    S.cfg = await store.config(); render();
+  }
+});
+
+/* ============================== INÍCIO ============================== */
+(async function iniciar() {
+  render();
+  try { store = LIVE ? await liveStore() : demoStore(); }
+  catch (e) { store = demoStore(); }
+  S.boot = false;
+  try { await aposLogin(); }
+  catch (e) { S.msg = { err: true, t: e.message }; render(); }
+})();
+</script>
+
+</body>
+</html>
