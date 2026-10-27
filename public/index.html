@@ -161,7 +161,7 @@ main { padding-block: 24px 64px; }
 .demo-users { display: grid; gap: 8px; }
 .demo-user { display: flex; justify-content: space-between; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 10px 14px; min-height: 52px; border-radius: var(--r-sm); border: 1px solid var(--line); background: var(--surface); cursor: pointer; }
 .demo-user:hover { border-color: var(--accent); }
-.demo-user b { display: block; font-size: 15px; }
+.demo-user b { display: block; font-size: 15px; color: var(--ink); }
 .demo-user span { font-size: 13px; color: var(--ink-3); }
 
 /* Painel */
@@ -760,13 +760,14 @@ async function liveStore() {
 
 /* ============================== ESTADO ============================== */
 let store;
+let storeReal = null;
 const S = {
   boot: true, session: null, perfil: null, cfg: {}, view: 'login', authTab: 'entrar', authMsg: null,
   msg: null, pacientes: [], esps: [], atalhos: [], busca: '',
   pid: null, pac: null, ptab: 'cadastro', psub: 'anamnese', anam: null, atend: [], editAt: null, pform: null,
   atab: 'usuarios', usuarios: [], audit: [], editLink: null, confirmDel: null, abertos: new Set(), busy: false,
   salas: [], profs: [], agenda: [], consultas: [], agHoje: 0,
-  installEvt: null, installOculto: (() => { try { return localStorage.getItem('clinica-instalar-oculto') === '1'; } catch (e) { return false; } })(), installAjuda: false,
+  demo: false, installEvt: null, installOculto: (() => { try { return localStorage.getItem('clinica-instalar-oculto') === '1'; } catch (e) { return false; } })(), installAjuda: false,
   ag: { data: hojeISO(), modo: (typeof window !== 'undefined' && window.innerWidth < 720) ? 'dia' : 'semana', filtro: 'todos', alvo: '', form: null, sel: null, confirmCancel: false, google: false }
 };
 const papel = () => (S.perfil && S.perfil.ativo ? S.perfil.papel : null);
@@ -886,7 +887,7 @@ function vTopo() {
     <a class="brand" href="#painel" ${logado ? 'data-act="go" data-v="painel"' : ''}>${IC.logo}<span>${esc(nomeClinica())}</span></a>
     ${logado ? `<div class="who"><span class="who-name">${esc(p.nome)}</span><span class="chip chip-accent">${esc(PAPEIS[p.papel] || p.papel)}</span><button class="btn-ghost" data-act="sair">Sair</button></div>` : ''}
   </div></header>
-  ${store.mode === 'demo' ? `<div class="demo-strip" role="region" aria-label="Modo demonstração"><div class="wrap">Prévia em modo demonstração: os dados são de exemplo e ficam salvos só neste aparelho.${logado ? ' <button class="btn-ghost btn-sm" data-act="trocar" style="min-height:32px;padding:2px 8px">Trocar de perfil</button>' : ''}</div></div>` : ''}`;
+  ${store.mode === 'demo' ? `<div class="demo-strip" role="region" aria-label="Modo demonstração"><div class="wrap">${S.demo ? '<b>Demonstração.</b> Dados de exemplo, salvos só neste aparelho e separados do banco da clínica.' : 'Prévia em modo demonstração: os dados são de exemplo e ficam salvos só neste aparelho.'}${logado ? ' <button class="btn-ghost btn-sm" data-act="trocar" style="min-height:32px;padding:2px 8px">Trocar de perfil</button>' : ''}${S.demo ? ' <button class="btn btn-primary btn-sm" data-act="demo-sair" style="min-height:32px;padding:4px 12px">Sair da demonstração</button>' : ''}</div></div>` : ''}`;
 }
 const msgBox = () => S.msg ? `<div class="msg ${S.msg.err ? 'msg-err' : 'msg-ok'}" role="status">${esc(S.msg.t)}</div>` : '';
 const voltar = (v = 'painel', t = 'Voltar ao painel') => `<a class="back" href="#${v}" data-act="go" data-v="${v}">${IC.back}${esc(t)}</a>`;
@@ -920,13 +921,14 @@ function vLogin() {
     </form>`;
   const demo = store.mode === 'demo' ? `
     <div class="card stack" style="gap:12px">
-      <div><p class="h-sec">Entrar na prévia como</p><p class="muted small" style="margin-top:4px">Cada perfil mostra o que aquela pessoa vê. Senha de todos: demo.</p></div>
+      <div><p class="h-sec">${S.demo ? 'Entrar na demonstração como' : 'Entrar na prévia como'}</p><p class="muted small" style="margin-top:4px">Cada perfil mostra o que aquela pessoa vê. Senha de todos: demo.</p></div>
       <div class="demo-users">
         ${[['u-mestre', 'Luis Henrique', 'Administrador mestre · neurociência (escrita)'], ['u-prof', 'Marina Alves', 'Profissional · psicologia (escrita), neurociência (leitura)'], ['u-rec', 'Paula Reis', 'Recepção · agenda e cadastro, sem fichas'], ['u-pac', 'Carlos Menezes', 'Paciente · os próprios dados'], ['u-pend', 'Ricardo Lima', 'Conta nova, aguardando liberação']]
           .map(([id, n, d]) => `<button class="demo-user" data-act="demo-entrar" data-id="${id}"><span style="display:block"><b>${n}</b><span>${d}</span></span>${IC.back.replace('M15 18l-6-6 6-6', 'M9 18l6-6-6-6')}</button>`).join('')}
       </div>
       <button class="btn-ghost btn-sm" data-act="demo-reset" style="align-self:flex-start">Restaurar os dados de exemplo</button>
     </div>` : '';
+  if (S.demo) return `<section class="stack" style="max-width:620px;gap:16px"><div class="stack" style="gap:6px"><p class="eyebrow">Área de testes do administrador</p><h1>Demonstração</h1><p class="muted">Escolha um perfil para ver a ferramenta como aquela pessoa vê. Nada do que for feito aqui chega ao banco da clínica.</p></div>${demo}</section>`;
   return `<section class="login">
     <div class="login-intro">
       <p class="eyebrow">Acesso da equipe e dos pacientes</p>
@@ -1310,8 +1312,8 @@ function vMeusDados() {
 
 /* ---------- Administração ---------- */
 function vAdmin() {
-  const tabs = [['usuarios', 'Usuários'], ['salas', 'Salas'], ['especialidades', 'Especialidades'], ['atalhos', 'Atalhos'], ['config', 'Configurações'], ['auditoria', 'Auditoria']];
-  const corpo = { usuarios: aUsuarios, salas: aSalas, especialidades: aEsps, atalhos: aAtalhos, config: aConfig, auditoria: aAuditoria }[S.atab]();
+  const tabs = [['usuarios', 'Usuários'], ['salas', 'Salas'], ['especialidades', 'Especialidades'], ['atalhos', 'Atalhos'], ['config', 'Configurações'], ['auditoria', 'Auditoria']].concat(store.mode === 'demo' ? [] : [['demo', 'Demonstração']]);
+  const corpo = { usuarios: aUsuarios, salas: aSalas, especialidades: aEsps, atalhos: aAtalhos, config: aConfig, auditoria: aAuditoria, demo: aDemo }[S.atab]();
   return `${voltar()}<div class="stack" style="gap:4px"><h1>Administração</h1><p class="muted">Quem acessa o quê na clínica.</p></div>
   <div class="tabs" role="tablist" aria-label="Administração">${tabs.map(([k, t]) => `<button role="tab" aria-selected="${S.atab === k}" data-act="atab" data-t="${k}">${t}</button>`).join('')}</div>
   ${msgBox()}<section class="stack">${corpo}</section>`;
@@ -1397,6 +1399,18 @@ function aAtalhos() {
     <div class="row"><button class="btn btn-primary btn-sm" type="submit">${ed ? 'Salvar atalho' : 'Adicionar atalho'}</button>${ed ? '<button class="btn btn-quiet btn-sm" type="button" data-act="cancel-link">Cancelar</button>' : ''}</div>
   </form>`;
 }
+function aDemo() {
+  return `<section class="card stack">
+    <h3>Ambiente de demonstração</h3>
+    <p class="muted">Uma cópia da ferramenta com dados de exemplo: pacientes, fichas, consultas desta semana, salas e atalhos. Serve para testar novidades, treinar a equipe e mostrar a clínica funcionando, sem tocar nos dados reais.</p>
+    <ul class="login-list">
+      <li>Você entra como qualquer perfil de exemplo: administrador mestre, profissional, recepção, paciente ou conta aguardando liberação.</li>
+      <li>Os dados de exemplo ficam salvos só neste aparelho e voltam ao original quando você restaura.</li>
+      <li>Somente administradores veem esta área.</li>
+    </ul>
+    <div class="row"><button class="btn btn-primary" data-act="demo-abrir">Abrir demonstração</button></div>
+  </section>`;
+}
 function aConfig() {
   return `<form class="card stack" data-form="cfg-nome" novalidate><h3>Nome da clínica</h3>
     <div class="field" style="max-width:460px"><label for="cf-nome">Nome exibido no topo e na tela de entrada</label><input id="cf-nome" name="nome" type="text" value="${esc(nomeClinica())}" required></div>
@@ -1434,6 +1448,7 @@ document.addEventListener('click', async (ev) => {
   const act = t.dataset.act;
   if (t.tagName === 'A' || act !== 'go') ev.preventDefault();
   if (act === 'go') { ev.preventDefault(); if (t.dataset.atab) S.atab = t.dataset.atab; go(t.dataset.v); }
+  else if (act === 'sair' && S.demo) { await store.signOut(); Object.assign(S, { session: null, perfil: null, view: 'login', authMsg: null, msg: null }); render(); }
   else if (act === 'sair') { await store.signOut(); Object.assign(S, { session: null, perfil: null, view: 'login', authTab: 'entrar', authMsg: null, msg: null }); try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {} render(); }
   else if (act === 'instalar') { const e = S.installEvt; S.installEvt = null; syncBarraInstalar(); if (e) { e.prompt(); try { await e.userChoice; } catch (x) { /* */ } } }
   else if (act === 'fechar-instalar') { S.installOculto = true; try { localStorage.setItem('clinica-instalar-oculto', '1'); } catch (x) { /* */ } syncBarraInstalar(); }
@@ -1441,6 +1456,20 @@ document.addEventListener('click', async (ev) => {
   else if (act === 'ajuda-app') { S.installAjuda = false; render(); }
   else if (act === 'trocar') { await store.signOut(); Object.assign(S, { session: null, perfil: null, view: 'login', authMsg: null, msg: null }); render(); }
   else if (act === 'auth-tab') { S.authTab = t.dataset.t; S.authMsg = null; render(); }
+  else if (act === 'demo-abrir') {
+    if (!ehGestor() || S.demo) return;
+    storeReal = store; store = demoStore(); S.demo = true;
+    Object.assign(S, { session: null, perfil: null, view: 'login', authMsg: null, msg: null, ag: { ...S.ag, form: null, sel: null, filtro: 'todos', alvo: '' } });
+    try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
+    await store.signOut(); render(); window.scrollTo(0, 0);
+  }
+  else if (act === 'demo-sair') {
+    if (!S.demo || !storeReal) return;
+    await store.signOut(); store = storeReal; storeReal = null; S.demo = false;
+    Object.assign(S, { view: 'admin', atab: 'demo', msg: null, ag: { ...S.ag, form: null, sel: null, filtro: 'todos', alvo: '' } });
+    try { history.replaceState(null, '', location.pathname + location.search + '#admin'); } catch (e) {}
+    await aposLogin(); window.scrollTo(0, 0);
+  }
   else if (act === 'demo-entrar') { await store.signInAs(t.dataset.id); location.hash = ''; await aposLogin(); }
   else if (act === 'demo-reset') { await store.reset(); S.authMsg = { ok: true, t: 'Dados de exemplo restaurados.' }; render(); }
   else if (act === 'novo-pac') { S.ag.form = null; S.ag.sel = null; S.pform = {}; go('paciente-form'); }
