@@ -264,6 +264,13 @@ ol.steps { margin: 0; padding-left: 20px; display: flex; flex-direction: column;
 .cons .d span { display: block; font-size: 12px; color: var(--ink-3); font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
 @media (max-width: 620px) { .cons { grid-template-columns: 1fr auto; } .cons .h { grid-column: 1; } }
 .dias-sem { display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.install { position: fixed; left: 0; right: 0; bottom: 0; z-index: 35; background: var(--surface); border-top: 1px solid var(--line); box-shadow: 0 -6px 16px rgba(15, 30, 25, .08); padding-bottom: env(safe-area-inset-bottom, 0px); }
+.install .wrap { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-block: 12px; }
+.install .install-ic { width: 36px; height: 36px; flex: none; }
+.install-txt { display: flex; gap: 12px; align-items: center; min-width: 0; font-size: 14px; }
+.ajuda-app { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 640px) { .ajuda-app { grid-template-columns: 1fr; } }
+.ajuda-app ol { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 4px; color: var(--ink-2); font-size: 15px; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .confirm { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 10px 12px; border-radius: var(--r-sm); background: var(--crit-tint); color: var(--crit); font-weight: 700; font-size: 14px; }
 </style>
@@ -741,6 +748,7 @@ const S = {
   pid: null, pac: null, ptab: 'cadastro', psub: 'anamnese', anam: null, atend: [], editAt: null, pform: null,
   atab: 'usuarios', usuarios: [], audit: [], editLink: null, confirmDel: null, abertos: new Set(), busy: false,
   salas: [], profs: [], agenda: [], consultas: [], agHoje: 0,
+  installEvt: null, installOculto: (() => { try { return localStorage.getItem('clinica-instalar-oculto') === '1'; } catch (e) { return false; } })(), installAjuda: false,
   ag: { data: hojeISO(), modo: (typeof window !== 'undefined' && window.innerWidth < 720) ? 'dia' : 'semana', filtro: 'todos', alvo: '', form: null, sel: null, confirmCancel: false, google: false }
 };
 const papel = () => (S.perfil && S.perfil.ativo ? S.perfil.papel : null);
@@ -848,6 +856,7 @@ function render() {
   else if (papel() === 'pendente') body = vBloqueado('Seu acesso está aguardando liberação', 'A conta foi criada. A administração da clínica precisa definir o seu perfil antes do primeiro acesso. Se você é paciente, peça à recepção para cadastrar o seu e-mail na sua ficha; a liberação é automática.');
   else body = ({ painel: vPainel, agenda: vAgenda, pacientes: vPacientes, 'paciente-form': vPacienteForm, paciente: vPaciente, admin: vAdmin, 'meus-dados': vMeusDados, 'minhas-consultas': vMinhasConsultas }[S.view] || vPainel)();
   app.innerHTML = vTopo() + `<main><div class="wrap stack" style="gap:24px">${body}</div></main>` + (S.perfil && S.view === 'agenda' ? vAgForm() + vAgDetalhe() : '');
+  syncBarraInstalar();
   const f = app.querySelector('[data-autofocus]'); if (f) f.focus();
   app.querySelectorAll('.tabs [aria-selected="true"]').forEach(b => { const t = b.parentElement; t.scrollLeft = Math.max(0, b.offsetLeft - t.offsetLeft - 16); });
 }
@@ -936,6 +945,33 @@ function vBloqueado(t, d) {
     <button class="btn btn-quiet" data-act="sair" style="align-self:flex-start">Sair</button></section>`;
 }
 
+/* ---------- Salvar como aplicativo ---------- */
+const ehApp = () => { try { return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true; } catch (e) { return false; } };
+const ehIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const ehCelular = () => ehIOS() || /android|mobile/i.test(navigator.userAgent);
+function barraInstalar() {
+  if (!store || store.mode === 'demo' || ehApp() || S.installOculto) return '';
+  const icone = '<img class="install-ic" src="icons/icon-192.png" alt="" width="36" height="36">';
+  if (S.installEvt) return `<div class="install" role="region" aria-label="Salvar como aplicativo"><div class="wrap"><span class="install-txt">${icone}<span>Salve a ${esc(nomeClinica())} como aplicativo no seu celular.</span></span><span class="row" style="flex-wrap:nowrap;gap:6px"><button class="btn btn-primary btn-sm" data-act="instalar">Salvar</button><button class="btn-ghost btn-sm" data-act="fechar-instalar" aria-label="Fechar aviso">✕</button></span></div></div>`;
+  if (ehIOS()) return `<div class="install" role="region" aria-label="Salvar como aplicativo"><div class="wrap"><span class="install-txt">${icone}<span>Para salvar como aplicativo, toque em <b>Compartilhar</b> e depois em <b>Adicionar à Tela de Início</b>.</span></span><button class="btn-ghost btn-sm" data-act="fechar-instalar" aria-label="Fechar aviso">✕</button></div></div>`;
+  return '';
+}
+function syncBarraInstalar() {
+  let el = document.getElementById('barra-instalar');
+  if (!el) { el = document.createElement('div'); el.id = 'barra-instalar'; document.body.appendChild(el); }
+  const html = barraInstalar();
+  if (el.innerHTML !== html) el.innerHTML = html;
+}
+function vAjudaApp() {
+  if (!S.installAjuda) return '';
+  return `<section class="card stack"><div class="spread"><h2>Salvar no celular</h2><button class="btn-ghost btn-sm" data-act="ajuda-app">Fechar</button></div>
+    <div class="ajuda-app">
+      <div class="stack" style="gap:8px"><b>iPhone (Safari)</b><ol><li>Abra este endereço no Safari.</li><li>Toque em <b>Compartilhar</b>, o quadrado com a seta para cima.</li><li>Escolha <b>Adicionar à Tela de Início</b> e toque em <b>Adicionar</b>.</li></ol></div>
+      <div class="stack" style="gap:8px"><b>Android (Chrome)</b><ol><li>Abra este endereço no Chrome.</li><li>Toque no menu de três pontos.</li><li>Escolha <b>Instalar aplicativo</b> ou <b>Adicionar à tela inicial</b>.</li></ol></div>
+    </div>
+    <p class="faint small">O ícone da clínica aparece junto dos outros aplicativos e abre direto no painel, em tela cheia.</p></section>`;
+}
+
 /* ---------- Painel ---------- */
 function aplicaAtalho(a) {
   const p = papel();
@@ -966,7 +1002,9 @@ function vPainel() {
       <span class="stack" style="gap:4px"><b>${esc(a.titulo)}</b>${a.descricao ? `<p>${esc(a.descricao)}</p>` : ''}</span>
       <span class="tile-meta"><span>${esc(dominio(a.url))}</span></span></a>`).join('');
   return `${msgBox()}
-  <section class="hello"><p class="eyebrow">${esc(hojeExtenso())}</p><h1>Olá, ${esc(primeiroNome(S.perfil.nome))}</h1><p class="muted">${esc(sub)}</p></section>
+  <section class="hello"><p class="eyebrow">${esc(hojeExtenso())}</p><h1>Olá, ${esc(primeiroNome(S.perfil.nome))}</h1><p class="muted">${esc(sub)}</p>
+    ${store.mode !== 'demo' && !ehApp() ? `<button class="btn btn-quiet btn-sm" data-act="salvar-app" style="align-self:flex-start;margin-top:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M11 18h2"/></svg> Salvar no celular</button>` : ''}</section>
+  ${vAjudaApp()}
   ${internos.length ? `<section class="stack" style="gap:12px"><h2 class="h-sec">Áreas da clínica</h2><div class="tiles">${internos.join('')}</div></section>` : ''}
   <section class="stack" style="gap:12px">
     <div class="spread"><h2 class="h-sec">Ferramentas e links</h2>${ehGestor() ? `<button class="btn-ghost btn-sm" data-act="go" data-v="admin" data-atab="atalhos">Gerenciar atalhos</button>` : ''}</div>
@@ -1379,6 +1417,10 @@ document.addEventListener('click', async (ev) => {
   if (t.tagName === 'A' || act !== 'go') ev.preventDefault();
   if (act === 'go') { ev.preventDefault(); if (t.dataset.atab) S.atab = t.dataset.atab; go(t.dataset.v); }
   else if (act === 'sair') { await store.signOut(); Object.assign(S, { session: null, perfil: null, view: 'login', authTab: 'entrar', authMsg: null, msg: null }); try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {} render(); }
+  else if (act === 'instalar') { const e = S.installEvt; S.installEvt = null; syncBarraInstalar(); if (e) { e.prompt(); try { await e.userChoice; } catch (x) { /* */ } } }
+  else if (act === 'fechar-instalar') { S.installOculto = true; try { localStorage.setItem('clinica-instalar-oculto', '1'); } catch (x) { /* */ } syncBarraInstalar(); }
+  else if (act === 'salvar-app') { if (S.installEvt) { const e = S.installEvt; S.installEvt = null; syncBarraInstalar(); e.prompt(); try { await e.userChoice; } catch (x) { /* */ } } else { S.installAjuda = !S.installAjuda; render(); } }
+  else if (act === 'ajuda-app') { S.installAjuda = false; render(); }
   else if (act === 'trocar') { await store.signOut(); Object.assign(S, { session: null, perfil: null, view: 'login', authMsg: null, msg: null }); render(); }
   else if (act === 'auth-tab') { S.authTab = t.dataset.t; S.authMsg = null; render(); }
   else if (act === 'demo-entrar') { await store.signInAs(t.dataset.id); location.hash = ''; await aposLogin(); }
@@ -1563,6 +1605,9 @@ document.addEventListener('submit', async (ev) => {
     S.cfg = await store.config(); render();
   }
 });
+
+window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); S.installEvt = e; if (store) syncBarraInstalar(); });
+window.addEventListener('appinstalled', () => { S.installEvt = null; S.installOculto = true; syncBarraInstalar(); });
 
 /* ============================== INÍCIO ============================== */
 (async function iniciar() {
