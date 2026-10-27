@@ -291,6 +291,40 @@ ol.steps { margin: 0; padding-left: 20px; display: flex; flex-direction: column;
 .site-foot .wrap { display: flex; align-items: center; gap: 18px; padding-block: 24px calc(32px + env(safe-area-inset-bottom, 0px)); }
 .foot-logo { width: 48px; height: auto; flex: none; display: block; }
 .foot-text { display: grid; gap: 4px; font-size: 13px; color: var(--ink-3); min-width: 0; }
+/* Financeiro */
+.kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 860px) { .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.kpi { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.kpi span { font-size: 13px; font-weight: 700; color: var(--ink-3); }
+.kpi b { font-family: var(--font-display); font-weight: 500; font-size: clamp(20px, 2.6vw, 26px); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kpi small { font-size: 12px; color: var(--ink-3); }
+.kpi.entrada b { color: var(--good); }
+.kpi.saida b { color: var(--crit); }
+.resultado { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; padding: 18px 20px; border-radius: var(--r); background: var(--accent-tint); color: var(--accent-text); }
+.resultado b { font-family: var(--font-display); font-weight: 500; font-size: 28px; font-variant-numeric: tabular-nums; }
+.resultado.neg { background: var(--crit-tint); color: var(--crit); }
+.cols-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; }
+@media (max-width: 860px) { .cols-2 { grid-template-columns: 1fr; } }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+tr.total td { font-weight: 800; background: var(--surface-2); }
+.barra-cat { height: 6px; border-radius: 3px; background: var(--surface-2); overflow: hidden; margin-top: 6px; }
+.barra-cat i { display: block; height: 100%; background: var(--accent); }
+.saida .barra-cat i { background: var(--crit); }
+.fin-mes { display: flex; align-items: center; gap: 6px; }
+.fin-mes h2 { font-size: 19px; min-width: 11ch; text-align: center; }
+.recibo-papel { background: #FFFFFF; color: #1C2925; border: 1px solid #DAE2DD; border-radius: 10px; padding: 32px; display: flex; flex-direction: column; gap: 18px; font-size: 15px; line-height: 1.6; }
+.recibo-papel h2 { font-size: 22px; letter-spacing: .02em; }
+.recibo-papel .rc-topo { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; border-bottom: 2px solid #1C2925; padding-bottom: 12px; }
+.recibo-papel .rc-valor { font-family: var(--font-display); font-size: 22px; font-variant-numeric: tabular-nums; border: 1px solid #1C2925; border-radius: 8px; padding: 6px 12px; white-space: nowrap; }
+.recibo-papel .rc-assina { margin-top: 28px; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.recibo-papel .rc-assina i { display: block; width: min(320px, 80%); border-top: 1px solid #1C2925; margin-bottom: 6px; }
+.recibo-papel .muted { color: #4A5953; }
+@media print {
+  body * { visibility: hidden !important; }
+  .recibo-papel, .recibo-papel * { visibility: visible !important; }
+  .recibo-papel { position: absolute; left: 0; top: 0; width: 100%; border: 0; }
+  .modal { position: static; background: none; padding: 0; }
+}
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .confirm { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 10px 12px; border-radius: var(--r-sm); background: var(--crit-tint); color: var(--crit); font-weight: 700; font-size: 14px; }
 </style>
@@ -354,6 +388,39 @@ const STATUS = {
   faltou: { t: 'Faltou', c: 'chip-crit' }, cancelado: { t: 'Cancelada', c: 'chip-warn' }
 };
 const DURACOES = [30, 40, 45, 50, 60, 90, 120];
+const brl = (v) => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+const valorInput = (v) => (v === null || v === undefined || v === '') ? '' : Number(v).toFixed(2).replace('.', ',');
+const parseValor = (x) => { let t = String(x ?? '').trim().replace(/[R$\s]/g, ''); if (!t) return NaN; if (t.includes(',')) t = t.replace(/\./g, '').replace(',', '.'); const n = Number(t); return Number.isFinite(n) ? Math.round(n * 100) / 100 : NaN; };
+const MESES_LONGO = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+const mesDe = (d) => d.slice(0, 7) + '-01';
+const addMes = (m, n) => { const [y, mm] = m.split('-').map(Number); return new Date(Date.UTC(y, mm - 1 + n, 1)).toISOString().slice(0, 10); };
+const mesLabel = (m) => `${MESES_LONGO[Number(m.slice(5, 7)) - 1]} de ${m.slice(0, 4)}`;
+const situacao = (l) => l.pago_em ? 'pago' : (l.vencimento < hojeISO() ? 'atrasado' : 'aberto');
+const sitChip = (l) => { const st = situacao(l); return st === 'pago' ? `<span class="chip chip-good">${l.tipo === 'receita' ? 'Recebido' : 'Pago'}</span>` : st === 'atrasado' ? '<span class="chip chip-crit">Atrasado</span>' : '<span class="chip">A vencer</span>'; };
+const CATS = {
+  receita: ['Consultas', 'Pacotes', 'Repasses', 'Aluguel de sala', 'Outras receitas'],
+  despesa: ['Aluguel', 'Energia', 'Água', 'Internet e telefone', 'Material e insumos', 'Limpeza', 'Manutenção', 'Impostos e taxas', 'Salários e serviços', 'Marketing', 'Outras despesas']
+};
+const FORMAS = ['Pix', 'Dinheiro', 'Cartão de débito', 'Cartão de crédito', 'Transferência', 'Boleto'];
+const ORIGEM = { manual: 'Manual', consulta: 'Consulta', pacote: 'Pacote', repasse: 'Repasse', aluguel: 'Aluguel de sala', recorrente: 'Recorrente' };
+function porExtenso(valor) {
+  const u = ['', 'um', 'dois', 'três', 'quatro', 'cinco', 'seis', 'sete', 'oito', 'nove', 'dez', 'onze', 'doze', 'treze', 'catorze', 'quinze', 'dezesseis', 'dezessete', 'dezoito', 'dezenove'];
+  const d = ['', '', 'vinte', 'trinta', 'quarenta', 'cinquenta', 'sessenta', 'setenta', 'oitenta', 'noventa'];
+  const c = ['', 'cento', 'duzentos', 'trezentos', 'quatrocentos', 'quinhentos', 'seiscentos', 'setecentos', 'oitocentos', 'novecentos'];
+  const ate999 = (n) => { if (!n) return ''; if (n === 100) return 'cem'; const p = []; const ce = Math.floor(n / 100), r = n % 100; if (ce) p.push(c[ce]); if (r) p.push(r < 20 ? u[r] : (r % 10 ? `${d[Math.floor(r / 10)]} e ${u[r % 10]}` : d[Math.floor(r / 10)])); return p.join(' e '); };
+  const cents = Math.round(Number(valor || 0) * 100);
+  const inteiro = Math.floor(cents / 100), cent = cents % 100;
+  const mi = Math.floor(inteiro / 1e6), mil = Math.floor(inteiro / 1000) % 1000, un = inteiro % 1000;
+  const partes = [];
+  if (mi) partes.push(ate999(mi) + (mi === 1 ? ' milhão' : ' milhões'));
+  if (mil) partes.push(mil === 1 ? 'mil' : ate999(mil) + ' mil');
+  if (un) partes.push(ate999(un));
+  let txt = partes[0] || '';
+  for (let i = 1; i < partes.length; i++) txt += ((i === partes.length - 1 && (un < 100 || un % 100 === 0)) ? ' e ' : ' ') + partes[i];
+  let r = inteiro ? txt + (inteiro === 1 ? ' real' : (mi && !mil && !un ? ' de reais' : ' reais')) : '';
+  if (cent) r += (r ? ' e ' : '') + ate999(cent) + (cent === 1 ? ' centavo' : ' centavos');
+  return r || 'zero real';
+}
 const _fp = new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
 const sp = (iso) => { const o = {}; _fp.formatToParts(new Date(iso)).forEach(p => { o[p.type] = p.value; }); return { date: `${o.year}-${o.month}-${o.day}`, min: (Number(o.hour) % 24) * 60 + Number(o.minute) }; };
 const pad2 = (n) => String(n).padStart(2, '0');
@@ -373,7 +440,7 @@ function demoStore() {
   const KEY = 'clinica-demo-v1';
   let db = null;
   try { db = JSON.parse(localStorage.getItem(KEY)); } catch (e) { db = null; }
-  if (!db || db.v !== 2) db = seed();
+  if (!db || db.v !== 3) db = finExemplo(seed());
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify(db)); } catch (e) {} };
 
   function seed() {
@@ -381,7 +448,7 @@ function demoStore() {
     const d = (n) => { const x = new Date(); x.setDate(x.getDate() - n); return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(x); };
     const E1 = 'esp-neuro', E2 = 'esp-psico', E3 = 'esp-integr';
     return {
-      v: 2, session: null,
+      v: 3, session: null,
       config: { nome_clinica: 'Clínica', agenda_url: '' },
       users: [
         { id: 'u-mestre', nome: 'Luis Henrique', email: 'mestre@demo', pw: hashStr('demo'), papel: 'mestre', ativo: true, registro_profissional: '', created_at: agora },
@@ -429,6 +496,45 @@ function demoStore() {
       audit: []
     };
   }
+  function finExemplo(base) {
+    const hoje = hojeISO(); const m0 = mesDe(hoje);
+    base.fin = {
+      acordos: [
+        { profissional_id: 'u-prof', recebedor: 'profissional', modelo: 'repasse_mensal', valor_modelo: 800, sala_id: null, dia_vencimento: 10, valor_sessao: 200 },
+        { profissional_id: 'u-mestre', recebedor: 'clinica', modelo: 'sem_divisao', valor_modelo: 0, sala_id: null, dia_vencimento: 10, valor_sessao: 250 }
+      ],
+      recs: [
+        { id: 'r1', tipo: 'despesa', descricao: 'Aluguel do imóvel', categoria: 'Aluguel', valor: 3500, dia_vencimento: 5, ativo: true, created_at: addMes(m0, -2) + 'T12:00:00Z' },
+        { id: 'r2', tipo: 'despesa', descricao: 'Energia elétrica', categoria: 'Energia', valor: 380, dia_vencimento: 12, ativo: true, created_at: addMes(m0, -2) + 'T12:00:00Z' },
+        { id: 'r3', tipo: 'despesa', descricao: 'Internet', categoria: 'Internet e telefone', valor: 150, dia_vencimento: 15, ativo: true, created_at: addMes(m0, -2) + 'T12:00:00Z' },
+        { id: 'r4', tipo: 'despesa', descricao: 'Limpeza semanal', categoria: 'Limpeza', valor: 600, dia_vencimento: 20, ativo: true, created_at: addMes(m0, -2) + 'T12:00:00Z' }
+      ],
+      pacotes: [{ id: 'pk1', paciente_id: 'p2', profissional_id: 'u-prof', descricao: 'Pacote de 5 sessões', sessoes: 5, valor: 850, ativo: true, created_at: addMes(m0, -1) + 'T12:00:00Z' }],
+      usos: [], lanc: [], seq: 1000
+    };
+    const L = (o) => base.fin.lanc.push({ id: uid(), numero: ++base.fin.seq, recebedor: 'clinica', origem: 'manual', pago_em: null, forma_pagamento: null, paciente_id: null, profissional_id: null, agendamento_id: null, pacote_id: null, recorrencia_id: null, competencia: null, observacao: '', created_at: new Date().toISOString(), ...o });
+    L({ tipo: 'receita', descricao: 'Pacote de 5 sessões', categoria: 'Pacotes', valor: 850, vencimento: addDias(hoje, -20), pago_em: addDias(hoje, -20), forma_pagamento: 'Pix', paciente_id: 'p2', profissional_id: 'u-prof', recebedor: 'profissional', pacote_id: 'pk1', origem: 'pacote' });
+    L({ tipo: 'despesa', descricao: 'Material de escritório', categoria: 'Material e insumos', valor: 230, vencimento: addDias(hoje, -6), pago_em: addDias(hoje, -6), forma_pagamento: 'Cartão de débito' });
+    L({ tipo: 'despesa', descricao: 'Conta de água', categoria: 'Água', valor: 96.4, vencimento: addDias(hoje, -4) });
+    L({ tipo: 'receita', descricao: 'Avaliação inicial', categoria: 'Consultas', valor: 300, vencimento: addDias(hoje, -8), paciente_id: 'p3', profissional_id: 'u-mestre' });
+    base.ag.filter(a => a.status === 'realizado').forEach(a => cobrarDemo(base, a, null));
+    const pago = base.fin.lanc.find(l => l.origem === 'consulta'); if (pago) { pago.pago_em = sp(pago.vencimento + 'T12:00:00-03:00').date; pago.forma_pagamento = 'Pix'; }
+    return base;
+  }
+  function cobrarDemo(base, a, antes) {
+    const F = base.fin;
+    if (a.status === 'realizado' && antes !== 'realizado') {
+      if (F.lanc.some(l => l.agendamento_id === a.id) || F.usos.some(u => u.agendamento_id === a.id)) return;
+      const pk = F.pacotes.filter(p => p.paciente_id === a.paciente_id && p.ativo && (!p.profissional_id || p.profissional_id === a.profissional_id) && F.usos.filter(u => u.pacote_id === p.id).length < p.sessoes).sort((x, y) => x.created_at.localeCompare(y.created_at))[0];
+      if (pk) { F.usos.push({ agendamento_id: a.id, pacote_id: pk.id }); return; }
+      const ac = F.acordos.find(x => x.profissional_id === a.profissional_id) || {};
+      const d = sp(a.inicio).date;
+      F.lanc.push({ id: uid(), numero: ++F.seq, tipo: 'receita', descricao: `Consulta de ${fmtData(d)} · ${base.users.find(u => u.id === a.profissional_id)?.nome || ''}`, categoria: 'Consultas', valor: ac.valor_sessao || 0, vencimento: d, pago_em: null, forma_pagamento: null, recebedor: ac.recebedor || 'clinica', paciente_id: a.paciente_id, profissional_id: a.profissional_id, agendamento_id: a.id, pacote_id: null, recorrencia_id: null, origem: 'consulta', competencia: null, observacao: '', created_at: new Date().toISOString() });
+    } else if (antes === 'realizado' && a.status !== 'realizado') {
+      F.lanc = F.lanc.filter(l => !(l.agendamento_id === a.id && l.origem === 'consulta' && !l.pago_em));
+      F.usos = F.usos.filter(u => u.agendamento_id !== a.id);
+    }
+  }
   function agendaExemplo() {
     const hoje = hojeISO();
     const util = (d) => { while ([0, 6].includes(dowDe(d))) d = addDias(d, 1); return d; };
@@ -466,6 +572,7 @@ function demoStore() {
   const nomeDe = (id) => db.users.find(u => u.id === id)?.nome || '';
   const log = (acao, o = {}) => { db.audit.unshift({ id: (db.audit[0]?.id || 0) + 1, user_id: db.session, acao, criado_em: new Date().toISOString(), ...o }); };
   const enriquecer = (a) => { const s = db.salas.find(x => x.id === a.sala_id); return { ...a, paciente: db.pacientes.find(p => p.id === a.paciente_id)?.nome || '', profissional: nomeDe(a.profissional_id), sala: s?.nome || '', cor: s?.cor || '#2E6B5F' }; };
+  const finEnriquecer = (l) => { const pac = db.pacientes.find(p => p.id === l.paciente_id); const pr = db.users.find(u => u.id === l.profissional_id); return { ...l, paciente: pac?.nome || '', paciente_cpf: pac?.cpf || '', profissional: pr?.nome || '', profissional_registro: pr?.registro_profissional || '' }; };
   const permsDe = (id) => Object.fromEntries(db.perms.filter(p => p.user_id === id).map(p => [p.especialidade_id, p.nivel]));
   const linkPorEmail = (pac) => {
     if (pac.user_id || !pac.email) return;
@@ -494,7 +601,7 @@ function demoStore() {
     },
     async signOut() { db.session = null; save(); },
     async resetPassword() { return { demo: true }; },
-    async reset() { try { localStorage.removeItem(KEY); } catch (e) {} db = seed(); },
+    async reset() { try { localStorage.removeItem(KEY); } catch (e) {} db = finExemplo(seed()); },
     async perfil() { const u = me(); return u ? { ...strip(u), permissoes: permsDe(u.id) } : null; },
     async usuarios() { if (!gest()) deny(); return db.users.map(u => ({ ...strip(u), permissoes: permsDe(u.id) })); },
     async equipe() { if (!eq()) return []; return db.users.filter(u => EQUIPE.includes(u.papel)).map(strip); },
@@ -623,6 +730,7 @@ function demoStore() {
         if (choques.some(b => b.profissional_id === a.profissional_id)) deny('O profissional já tem consulta nesse horário.');
       }
       const det = `${db.salas.find(x => x.id === a.sala_id)?.nome} · ${fmtData(sp(a.inicio).date)} ${hm(sp(a.inicio).min)} · ${a.status}`;
+      const statusAntes = antigo ? antigo.status : null;
       if (antigo) {
         const acao = a.status === 'cancelado' && antigo.status !== 'cancelado' ? 'Cancelou consulta' : a.status !== antigo.status ? 'Alterou situação da consulta' : 'Alterou consulta';
         Object.assign(antigo, { paciente_id: a.paciente_id, profissional_id: a.profissional_id, sala_id: a.sala_id, inicio: a.inicio, fim: a.fim, status: a.status, observacao: a.observacao });
@@ -631,6 +739,69 @@ function demoStore() {
         db.ag.push({ ...a, id: uid(), status: a.status || 'agendado', created_at: new Date().toISOString() });
         log('Agendou consulta', { paciente_id: a.paciente_id, detalhe: det });
       }
+      cobrarDemo(db, antigo || db.ag[db.ag.length - 1], statusAntes);
+      save();
+    },
+    async finGerarMes(mes) {
+      if (!gest()) deny();
+      const F = db.fin, ini = mesDe(mes), fim = addMes(ini, 1); let n = 0;
+      F.recs.filter(r => r.ativo && mesDe(sp(r.created_at).date) <= ini).forEach(r => {
+        if (F.lanc.some(l => l.recorrencia_id === r.id && l.competencia === ini)) return;
+        F.lanc.push({ id: uid(), numero: ++F.seq, tipo: r.tipo, descricao: r.descricao, categoria: r.categoria, valor: r.valor, vencimento: addDias(ini, r.dia_vencimento - 1), pago_em: null, forma_pagamento: null, recebedor: 'clinica', paciente_id: null, profissional_id: null, agendamento_id: null, pacote_id: null, recorrencia_id: r.id, origem: 'recorrente', competencia: ini, observacao: '', created_at: new Date().toISOString() });
+        { const l = F.lanc[F.lanc.length - 1]; if (l.vencimento < addDias(hojeISO(), -3) && l.descricao !== 'Limpeza semanal') { l.pago_em = l.vencimento; l.forma_pagamento = 'Boleto'; } }
+        n++;
+      });
+      F.acordos.filter(a => ['repasse_mensal', 'aluguel_hora'].includes(a.modelo)).forEach(a => {
+        const nome = nomeDe(a.profissional_id);
+        let valor, obs = '';
+        if (a.modelo === 'repasse_mensal') valor = Number(a.valor_modelo);
+        else {
+          const horas = db.ag.filter(g => g.profissional_id === a.profissional_id && g.status !== 'cancelado' && (!a.sala_id || g.sala_id === a.sala_id) && sp(g.inicio).date >= ini && sp(g.inicio).date < fim).reduce((t, g) => t + (new Date(g.fim) - new Date(g.inicio)) / 3600000, 0);
+          valor = Math.round(horas * Number(a.valor_modelo) * 100) / 100; obs = `${horas.toFixed(1).replace('.', ',')} h marcadas na agenda`;
+        }
+        const origem = a.modelo === 'repasse_mensal' ? 'repasse' : 'aluguel';
+        const desc = `${origem === 'repasse' ? 'Repasse mensal' : 'Aluguel de sala'} · ${nome} · ${ini.slice(5, 7)}/${ini.slice(0, 4)}`;
+        const ex = F.lanc.find(l => l.origem === origem && l.profissional_id === a.profissional_id && l.competencia === ini);
+        if (ex) { if (!ex.pago_em) Object.assign(ex, { valor, observacao: obs, descricao: desc }); }
+        else F.lanc.push({ id: uid(), numero: ++F.seq, tipo: 'receita', descricao: desc, categoria: origem === 'repasse' ? 'Repasses' : 'Aluguel de sala', valor, vencimento: addDias(fim, a.dia_vencimento - 1), pago_em: null, forma_pagamento: null, recebedor: 'clinica', paciente_id: null, profissional_id: a.profissional_id, agendamento_id: null, pacote_id: null, recorrencia_id: null, origem, competencia: ini, observacao: obs, created_at: new Date().toISOString() });
+        n++;
+      });
+      save(); return n;
+    },
+    async lancamentos(de, ate) { if (!gest()) deny(); return db.fin.lanc.filter(l => l.vencimento >= de && l.vencimento < ate).sort((a, b) => a.vencimento.localeCompare(b.vencimento) || a.numero - b.numero).map(finEnriquecer); },
+    async finAtrasados() { if (!gest()) deny(); const h = hojeISO(); return db.fin.lanc.filter(l => !l.pago_em && l.vencimento < h).sort((a, b) => a.vencimento.localeCompare(b.vencimento)).map(finEnriquecer); },
+    async salvarLancamento(l) {
+      if (!gest()) deny();
+      const F = db.fin;
+      if (l.id) Object.assign(F.lanc.find(x => x.id === l.id), l);
+      else F.lanc.push({ id: uid(), numero: ++F.seq, origem: 'manual', agendamento_id: null, pacote_id: null, recorrencia_id: null, competencia: null, created_at: new Date().toISOString(), ...l });
+      save();
+    },
+    async removerLancamento(id) { if (!gest()) deny(); db.fin.lanc = db.fin.lanc.filter(x => x.id !== id); save(); },
+    async acordos() { if (!gest()) deny(); return db.fin.acordos.map(a => ({ ...a })); },
+    async salvarAcordo(a) {
+      if (!gest()) deny();
+      const i = db.fin.acordos.findIndex(x => x.profissional_id === a.profissional_id);
+      if (i >= 0) db.fin.acordos[i] = { ...a }; else db.fin.acordos.push({ ...a });
+      save();
+    },
+    async recorrencias() { if (!gest()) deny(); return db.fin.recs.map(r => ({ ...r })); },
+    async salvarRecorrencia(r) {
+      if (!gest()) deny();
+      if (r.id) Object.assign(db.fin.recs.find(x => x.id === r.id), r);
+      else db.fin.recs.push({ ...r, id: uid(), created_at: new Date().toISOString() });
+      save();
+    },
+    async pacotes() {
+      if (!gest()) deny();
+      return db.fin.pacotes.map(p => ({ ...p, paciente: db.pacientes.find(x => x.id === p.paciente_id)?.nome || '', profissional: p.profissional_id ? nomeDe(p.profissional_id) : '', usadas: db.fin.usos.filter(u => u.pacote_id === p.id).length })).sort((a, b) => b.created_at.localeCompare(a.created_at));
+    },
+    async salvarPacote(p, cobranca) {
+      if (!gest()) deny();
+      if (p.id) { Object.assign(db.fin.pacotes.find(x => x.id === p.id), p); save(); return; }
+      const novo = { ...p, id: uid(), ativo: true, created_at: new Date().toISOString() };
+      db.fin.pacotes.push(novo);
+      if (cobranca) db.fin.lanc.push({ id: uid(), numero: ++db.fin.seq, tipo: 'receita', categoria: 'Pacotes', origem: 'pacote', agendamento_id: null, recorrencia_id: null, competencia: null, observacao: '', created_at: new Date().toISOString(), ...cobranca, pacote_id: novo.id });
       save();
     },
     async auditoria() {
@@ -654,12 +825,15 @@ async function liveStore() {
     if (/duplicate key.*email/i.test(m)) return 'Já existe um paciente com este e-mail.';
     if (/agenda_sala_livre/i.test(m)) return 'A sala já está ocupada nesse horário.';
     if (/agenda_profissional_livre/i.test(m)) return 'O profissional já tem consulta nesse horário.';
+    if (/lancamentos_valor_check|valor >= 0/i.test(m)) return 'O valor não pode ser negativo.';
     if (/salas_nome_key/i.test(m)) return 'Já existe uma sala com este nome.';
     if (/duplicate key.*nome/i.test(m)) return 'Já existe uma especialidade com este nome.';
     return m;
   };
   let uidAtual = null;
   const AG_SEL = '*, pac:pacientes(nome), prof:perfis!agendamentos_profissional_id_fkey(nome), sl:salas(nome,cor)';
+  const FIN_SEL = '*, pac:pacientes(nome,cpf), prof:perfis!lancamentos_profissional_id_fkey(nome,registro_profissional)';
+  const finRow = (r) => ({ ...r, valor: Number(r.valor), paciente: r.pac?.nome || '', paciente_cpf: r.pac?.cpf || '', profissional: r.prof?.nome || '', profissional_registro: r.prof?.registro_profissional || '' });
   const agRow = (r) => ({ ...r, paciente: r.pac?.nome || '', profissional: r.prof?.nome || '', sala: r.sl?.nome || '', cor: r.sl?.cor || '#2E6B5F' });
   const sess = async () => { const { data } = await sb.auth.getSession(); uidAtual = data.session?.user?.id || null; return data.session; };
   sb.auth.onAuthStateChange((ev) => { if (ev === 'PASSWORD_RECOVERY') { S.view = 'nova-senha'; render(); } });
@@ -750,6 +924,33 @@ async function liveStore() {
       return rows.map(agRow);
     },
     async minhasConsultas() { return ok(await sb.rpc('minhas_consultas')); },
+    async finGerarMes(mes) { return ok(await sb.rpc('fin_gerar_mes', { p_mes: mes })); },
+    async lancamentos(de, ate) { return ok(await sb.from('lancamentos').select(FIN_SEL).gte('vencimento', de).lt('vencimento', ate).order('vencimento').order('numero')).map(finRow); },
+    async finAtrasados() { return ok(await sb.from('lancamentos').select(FIN_SEL).is('pago_em', null).lt('vencimento', hojeISO()).order('vencimento')).map(finRow); },
+    async salvarLancamento(l) {
+      const row = {}; ['tipo', 'descricao', 'categoria', 'valor', 'vencimento', 'pago_em', 'forma_pagamento', 'recebedor', 'paciente_id', 'profissional_id', 'observacao'].forEach(k => { if (k in l) row[k] = l[k] === '' ? null : l[k]; });
+      if (l.id) ok(await sb.from('lancamentos').update(row).eq('id', l.id));
+      else ok(await sb.from('lancamentos').insert(row));
+    },
+    async removerLancamento(id) { ok(await sb.from('lancamentos').delete().eq('id', id)); },
+    async acordos() { return ok(await sb.from('fin_acordos').select('*')); },
+    async salvarAcordo(a) { ok(await sb.from('fin_acordos').upsert({ ...a, updated_at: new Date().toISOString() })); },
+    async recorrencias() { return ok(await sb.from('fin_recorrencias').select('*').order('descricao')); },
+    async salvarRecorrencia(r) {
+      const row = { tipo: r.tipo, descricao: r.descricao, categoria: r.categoria, valor: r.valor, dia_vencimento: r.dia_vencimento, ativo: r.ativo };
+      if (r.id) ok(await sb.from('fin_recorrencias').update(row).eq('id', r.id));
+      else ok(await sb.from('fin_recorrencias').insert(row));
+    },
+    async pacotes() {
+      const rows = ok(await sb.from('pacotes').select('*, pac:pacientes(nome), prof:perfis(nome), usos:pacote_usos(count)').order('created_at', { ascending: false }));
+      return rows.map(r => ({ ...r, paciente: r.pac?.nome || '', profissional: r.prof?.nome || '', usadas: r.usos?.[0]?.count || 0 }));
+    },
+    async salvarPacote(p, cobranca) {
+      const row = { paciente_id: p.paciente_id, profissional_id: p.profissional_id || null, descricao: p.descricao, sessoes: p.sessoes, valor: p.valor, ativo: p.ativo !== false };
+      if (p.id) { ok(await sb.from('pacotes').update(row).eq('id', p.id)); return; }
+      const novo = ok(await sb.from('pacotes').insert(row).select().single());
+      if (cobranca) ok(await sb.from('lancamentos').insert({ tipo: 'receita', categoria: 'Pacotes', origem: 'pacote', ...cobranca, pacote_id: novo.id }));
+    },
     async salvarAgendamento(a) {
       const row = { paciente_id: a.paciente_id, profissional_id: a.profissional_id, sala_id: a.sala_id, inicio: a.inicio, fim: a.fim, status: a.status || 'agendado', observacao: a.observacao || null };
       if (a.id) ok(await sb.from('agendamentos').update(row).eq('id', a.id));
@@ -771,6 +972,8 @@ const S = {
   pid: null, pac: null, ptab: 'cadastro', psub: 'anamnese', anam: null, atend: [], editAt: null, pform: null,
   atab: 'usuarios', usuarios: [], audit: [], editLink: null, confirmDel: null, abertos: new Set(), busy: false,
   salas: [], profs: [], agenda: [], consultas: [], agHoje: 0,
+  finAtrasadosN: 0,
+  fin: { mes: mesDe(hojeISO()), tab: 'resumo', tipo: 'todos', sit: 'todas', lanc: [], atrasados: [], acordos: [], recs: [], pacotes: [], form: null, pagar: null, recibo: null, editRec: null, confirmDel: null },
   demo: false, installEvt: null, installOculto: (() => { try { return localStorage.getItem('clinica-instalar-oculto') === '1'; } catch (e) { return false; } })(), installAjuda: false,
   ag: { data: hojeISO(), modo: (typeof window !== 'undefined' && window.innerWidth < 720) ? 'dia' : 'semana', filtro: 'todos', alvo: '', form: null, sel: null, confirmCancel: false, google: false }
 };
@@ -793,6 +996,7 @@ const IC = {
   agenda: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/><path d="M8 14h3v3H8z"/></svg>',
   pacientes: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M3 20c.6-3.5 3-5.5 6-5.5s5.4 2 6 5.5"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14.8c1.6.8 2.7 2.5 3 5.2"/></svg>',
   admin: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4 6v6c0 4.5 3.4 8 8 9 4.6-1 8-4.5 8-9V6l-8-3Z"/><path d="m9 12 2 2 4-4"/></svg>',
+  fin: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="6" width="19" height="12" rx="2"/><circle cx="12" cy="12" r="2.6"/><path d="M6 9.5v.01M18 14.5v.01"/></svg>',
   ficha: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>',
   ext: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>',
   lock: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>',
@@ -815,6 +1019,7 @@ async function rota() {
   else if (h.startsWith('paciente-') && ehEquipe()) { S.pid = h.slice(9); S.view = 'paciente'; S.ptab = 'cadastro'; }
   else if (['agenda', 'pacientes'].includes(h) && ehEquipe()) S.view = h;
   else if (h === 'admin' && ehGestor()) S.view = 'admin';
+  else if (h === 'financeiro' && ehGestor()) S.view = 'financeiro';
   else if (h === 'meus-dados' && papel() === 'paciente') S.view = 'meus-dados';
   else if (h === 'minhas-consultas' && papel() === 'paciente') S.view = 'minhas-consultas';
   else S.view = 'painel';
@@ -828,6 +1033,7 @@ async function carregar() {
     if (!S.perfil) return;
     if (S.view === 'painel') {
       S.atalhos = await store.atalhos();
+      if (ehGestor()) S.finAtrasadosN = (await store.finAtrasados()).length;
       if (ehEquipe()) {
         S.pacientes = await store.pacientes();
         const h = hojeISO();
@@ -838,6 +1044,8 @@ async function carregar() {
       S.profs = await store.profissionais();
       S.pacientes = await store.pacientes();
       await carregarAgenda();
+    } else if (S.view === 'financeiro') {
+      await carregarFin();
     } else if (S.view === 'minhas-consultas') {
       S.consultas = await store.minhasConsultas();
     } else if (S.view === 'pacientes') {
@@ -866,6 +1074,18 @@ async function carregarAgenda() {
   const [a, b] = agPeriodo();
   S.agenda = await store.agenda(isoSP(a, 0), isoSP(b, 0));
 }
+async function carregarFin() {
+  const F = S.fin;
+  S.profs = await store.profissionais();
+  S.pacientes = await store.pacientes();
+  S.salas = await store.salas();
+  await store.finGerarMes(F.mes);
+  F.lanc = await store.lancamentos(F.mes, addMes(F.mes, 1));
+  F.atrasados = await store.finAtrasados();
+  F.acordos = await store.acordos();
+  F.recs = await store.recorrencias();
+  F.pacotes = await store.pacotes();
+}
 async function carregarFicha() {
   S.anam = null; S.atend = []; S.editAt = null;
   if (S.ptab === 'cadastro' || !nivelEm(S.ptab)) return;
@@ -884,8 +1104,8 @@ function render() {
   else if (!S.session || !S.perfil) body = vLogin();
   else if (!S.perfil.ativo) body = vBloqueado('Acesso desativado', 'O seu acesso foi desativado pela administração da clínica. Se acha que isso é um engano, fale com a recepção.');
   else if (papel() === 'pendente') body = vBloqueado('Seu acesso está aguardando liberação', 'A conta foi criada. A administração da clínica precisa definir o seu perfil antes do primeiro acesso. Se você é paciente, peça à recepção para cadastrar o seu e-mail na sua ficha; a liberação é automática.');
-  else body = ({ painel: vPainel, agenda: vAgenda, pacientes: vPacientes, 'paciente-form': vPacienteForm, paciente: vPaciente, admin: vAdmin, 'meus-dados': vMeusDados, 'minhas-consultas': vMinhasConsultas }[S.view] || vPainel)();
-  app.innerHTML = vTopo() + `<main><div class="wrap stack" style="gap:24px">${body}</div></main>` + vRodape() + (S.perfil && S.view === 'agenda' ? vAgForm() + vAgDetalhe() : '');
+  else body = ({ painel: vPainel, agenda: vAgenda, pacientes: vPacientes, 'paciente-form': vPacienteForm, paciente: vPaciente, admin: vAdmin, 'meus-dados': vMeusDados, 'minhas-consultas': vMinhasConsultas, financeiro: vFinanceiro }[S.view] || vPainel)();
+  app.innerHTML = vTopo() + `<main><div class="wrap stack" style="gap:24px">${body}</div></main>` + vRodape() + (S.perfil && S.view === 'agenda' ? vAgForm() + vAgDetalhe() : '') + (S.perfil && S.view === 'financeiro' ? vFinForm() + vFinPagar() + vRecibo() : '');
   syncBarraInstalar();
   const f = app.querySelector('[data-autofocus]'); if (f) f.focus();
   app.querySelectorAll('.tabs [aria-selected="true"]').forEach(b => { const t = b.parentElement; t.scrollLeft = Math.max(0, b.offsetLeft - t.offsetLeft - 16); });
@@ -1021,6 +1241,7 @@ function vPainel() {
     const n = S.pacientes.length;
     internos.push(tileInterno('pacientes', IC.pacientes, 'Pacientes', p === 'recepcao' ? 'Cadastro e contato dos pacientes' : 'Cadastro, anamnese e histórico de atendimentos', `<span class="tnum">${n} ${n === 1 ? 'cadastrado' : 'cadastrados'}</span>`));
   }
+  if (ehGestor()) internos.push(tileInterno('financeiro', IC.fin, 'Financeiro', 'Recebimentos, gastos, repasses e relatório do mês', S.finAtrasadosN ? `<span class="chip chip-crit">${S.finAtrasadosN} ${S.finAtrasadosN === 1 ? 'conta atrasada' : 'contas atrasadas'}</span>` : '<span>Em dia</span>', '#2D7550'));
   if (ehGestor()) internos.push(tileInterno('admin', IC.admin, 'Administração', 'Usuários, permissões, salas, especialidades e atalhos', '', '#7A5A2E'));
   if (p === 'paciente') {
     internos.push(tileInterno('minhas-consultas', IC.agenda, 'Minhas consultas', 'Dias, horários e salas das suas consultas', '', '#2F68B0'));
@@ -1313,6 +1534,189 @@ function vFichaEsp(esp) {
   return `${sub}${form}${lista}`;
 }
 
+/* ---------- Financeiro ---------- */
+const doClinica = (l) => l.recebedor !== 'profissional' || l.tipo === 'despesa';
+function finTotais(lista) {
+  const t = { recebido: 0, aReceber: 0, pago: 0, aPagar: 0, diretoProf: 0 };
+  lista.forEach(l => {
+    const v = Number(l.valor || 0);
+    if (l.tipo === 'receita' && l.recebedor === 'profissional') { if (l.pago_em) t.diretoProf += v; return; }
+    if (l.tipo === 'receita') { if (l.pago_em) t.recebido += v; else t.aReceber += v; }
+    else { if (l.pago_em) t.pago += v; else t.aPagar += v; }
+  });
+  return t;
+}
+function vFinanceiro() {
+  const F = S.fin;
+  const tabs = [['resumo', 'Resumo do mês'], ['lancamentos', 'Contas a receber e a pagar'], ['pacotes', 'Pacotes'], ['profissionais', 'Profissionais'], ['recorrentes', 'Gastos recorrentes']];
+  const corpo = { resumo: fResumo, lancamentos: fLancamentos, pacotes: fPacotes, profissionais: fProfissionais, recorrentes: fRecorrentes }[F.tab]();
+  return `${voltar()}${F.form || F.pagar || F.recibo ? '' : msgBox()}
+  <div class="page-head"><div class="stack" style="gap:4px"><h1>Financeiro</h1><p class="muted">Visível somente para administradores.</p></div>
+    <div class="row"><div class="fin-mes"><button class="ag-icon-btn" data-act="fin-mes" data-n="-1" aria-label="Mês anterior">${IC.back}</button><h2>${esc(mesLabel(F.mes).replace(/^./, c => c.toUpperCase()))}</h2><button class="ag-icon-btn" data-act="fin-mes" data-n="1" aria-label="Próximo mês">${IC.back.replace('M15 18l-6-6 6-6', 'M9 18l6-6-6-6')}</button></div>
+    <button class="btn btn-primary" data-act="fin-novo">Novo lançamento</button></div></div>
+  <div class="tabs" role="tablist" aria-label="Financeiro">${tabs.map(([k, t]) => `<button role="tab" aria-selected="${F.tab === k}" data-act="fin-tab" data-t="${k}">${t}</button>`).join('')}</div>
+  <section class="stack">${corpo}</section>`;
+}
+function linhaLanc(l, { compacta = false } = {}) {
+  const quem = [l.paciente, l.profissional && !l.paciente ? l.profissional : ''].filter(Boolean).join(' · ');
+  const acoes = S.fin.confirmDel === l.id
+    ? `<span class="confirm">Excluir? <button class="btn btn-danger btn-sm" data-act="fin-del" data-id="${esc(l.id)}">Excluir</button><button class="btn-ghost btn-sm" data-act="fin-del-nao">Manter</button></span>`
+    : [!l.pago_em ? `<button class="btn btn-quiet btn-sm" data-act="fin-pagar" data-id="${esc(l.id)}">${l.tipo === 'receita' ? 'Receber' : 'Pagar'}</button>` : '',
+       l.tipo === 'receita' && l.pago_em && l.paciente_id ? `<button class="btn-ghost btn-sm" data-act="fin-recibo" data-id="${esc(l.id)}">Recibo</button>` : '',
+       !compacta ? `<button class="btn-ghost btn-sm" data-act="fin-editar" data-id="${esc(l.id)}">Editar</button>` : '',
+       !compacta && !l.pago_em && ['manual', 'recorrente'].includes(l.origem) ? `<button class="btn-ghost btn-sm" data-act="fin-del-ask" data-id="${esc(l.id)}">Excluir</button>` : ''].join('');
+  return `<tr><td class="tnum" style="white-space:nowrap">${fmtData(l.vencimento)}</td>
+    <td><b>${esc(l.descricao)}</b>${quem ? `<br><span class="small muted">${esc(quem)}</span>` : ''}${l.recebedor === 'profissional' && l.tipo === 'receita' ? '<br><span class="small faint">Recebido pelo profissional</span>' : ''}${l.observacao ? `<br><span class="small faint">${esc(l.observacao)}</span>` : ''}</td>
+    ${compacta ? '' : `<td class="small">${esc(l.categoria)}<br><span class="faint">${esc(ORIGEM[l.origem] || '')}</span></td>`}
+    <td class="num" style="color:${l.tipo === 'receita' ? 'var(--good)' : 'var(--crit)'}">${l.tipo === 'despesa' ? '− ' : ''}${brl(l.valor)}</td>
+    <td>${sitChip(l)}${l.pago_em ? `<br><span class="small faint tnum">${fmtData(l.pago_em)}${l.forma_pagamento ? ' · ' + esc(l.forma_pagamento) : ''}</span>` : ''}</td>
+    <td style="white-space:nowrap">${acoes}</td></tr>`;
+}
+function fResumo() {
+  const F = S.fin; const t = finTotais(F.lanc);
+  const res = t.recebido - t.pago;
+  const prev = (t.recebido + t.aReceber) - (t.pago + t.aPagar);
+  const porCat = (tipo) => {
+    const m = {}; F.lanc.filter(l => l.tipo === tipo && doClinica(l)).forEach(l => { const k = l.categoria; m[k] = m[k] || { prev: 0, real: 0 }; m[k].prev += Number(l.valor); if (l.pago_em) m[k].real += Number(l.valor); });
+    const lin = Object.entries(m).sort((a, b) => b[1].prev - a[1].prev);
+    const tot = lin.reduce((s, [, v]) => s + v.prev, 0), totR = lin.reduce((s, [, v]) => s + v.real, 0);
+    if (!lin.length) return `<div class="empty">Nenhum lançamento no mês.</div>`;
+    return `<div class="table-wrap ${tipo === 'despesa' ? 'saida' : ''}"><table><thead><tr><th>Categoria</th><th class="num">Previsto</th><th class="num">${tipo === 'receita' ? 'Recebido' : 'Pago'}</th></tr></thead><tbody>
+      ${lin.map(([k, v]) => `<tr><td>${esc(k)}<div class="barra-cat"><i style="width:${tot ? Math.round(v.prev / tot * 100) : 0}%"></i></div></td><td class="num">${brl(v.prev)}</td><td class="num">${brl(v.real)}</td></tr>`).join('')}
+      <tr class="total"><td>Total</td><td class="num">${brl(tot)}</td><td class="num">${brl(totR)}</td></tr></tbody></table></div>`;
+  };
+  return `<div class="kpis">
+      <div class="kpi entrada"><span>Recebido</span><b>${brl(t.recebido)}</b><small>Entradas da clínica pagas no mês</small></div>
+      <div class="kpi"><span>A receber</span><b>${brl(t.aReceber)}</b><small>Entradas do mês em aberto</small></div>
+      <div class="kpi saida"><span>Pago</span><b>${brl(t.pago)}</b><small>Saídas pagas no mês</small></div>
+      <div class="kpi"><span>A pagar</span><b>${brl(t.aPagar)}</b><small>Saídas do mês em aberto</small></div>
+    </div>
+    <div class="resultado ${res < 0 ? 'neg' : ''}"><div class="stack" style="gap:2px"><span class="eyebrow" style="color:inherit">Resultado do mês até agora</span><span class="small">Recebido menos pago. Previsão com o que está em aberto: <b class="tnum" style="font-size:15px">${brl(prev)}</b></span></div><b>${brl(res)}</b></div>
+    ${t.diretoProf ? `<p class="muted small">Pagamentos de pacientes recebidos diretamente pelos profissionais no mês: <b class="tnum">${brl(t.diretoProf)}</b>. Ficam registrados para recibo e histórico, fora do caixa da clínica.</p>` : ''}
+    ${F.atrasados.length ? `<div class="stack" style="gap:10px"><h2>Atrasados <span class="chip chip-crit">${F.atrasados.length}</span></h2><div class="table-wrap"><table><thead><tr><th>Vencimento</th><th>Descrição</th><th class="num">Valor</th><th>Situação</th><th></th></tr></thead><tbody>${F.atrasados.map(l => linhaLanc(l, { compacta: true })).join('')}</tbody></table></div></div>` : ''}
+    <div class="cols-2"><div class="stack" style="gap:10px"><h2>Entradas por categoria</h2>${porCat('receita')}</div><div class="stack" style="gap:10px"><h2>Saídas por categoria</h2>${porCat('despesa')}</div></div>`;
+}
+function fLancamentos() {
+  const F = S.fin;
+  const lista = F.lanc.filter(l => (F.tipo === 'todos' || l.tipo === F.tipo) && (F.sit === 'todas' || situacao(l) === F.sit));
+  return `<div class="ag-bar"><div class="subtabs" role="tablist" aria-label="Tipo">${[['todos', 'Todos'], ['receita', 'A receber'], ['despesa', 'A pagar']].map(([k, t]) => `<button role="tab" aria-selected="${F.tipo === k}" data-act="fin-tipo" data-t="${k}">${t}</button>`).join('')}</div>
+      <div class="ag-filtros"><label class="sr-only" for="fin-sit">Situação</label><select id="fin-sit" data-act-change="fin-sit">${[['todas', 'Todas as situações'], ['aberto', 'A vencer'], ['atrasado', 'Atrasados'], ['pago', 'Pagos e recebidos']].map(([k, t]) => `<option value="${k}" ${F.sit === k ? 'selected' : ''}>${t}</option>`).join('')}</select></div></div>
+    ${lista.length ? `<div class="table-wrap"><table><thead><tr><th>Vencimento</th><th>Descrição</th><th>Categoria</th><th class="num">Valor</th><th>Situação</th><th></th></tr></thead><tbody>${lista.map(l => linhaLanc(l)).join('')}</tbody></table></div>` : `<div class="empty">Nenhum lançamento com vencimento em ${esc(mesLabel(F.mes))} para este filtro.</div>`}
+    <p class="faint small">Consultas realizadas geram a cobrança sozinhas. Repasses, aluguéis de sala e gastos recorrentes entram no mês automaticamente.</p>`;
+}
+function fPacotes() {
+  const F = S.fin;
+  const lista = F.pacotes.length ? `<div class="table-wrap"><table><thead><tr><th>Paciente</th><th>Pacote</th><th>Profissional</th><th class="num">Sessões</th><th class="num">Valor</th><th></th></tr></thead><tbody>
+    ${F.pacotes.map(p => `<tr><td><b>${esc(p.paciente)}</b></td><td>${esc(p.descricao)}</td><td>${esc(p.profissional || 'Qualquer profissional')}</td><td class="num">${p.usadas} de ${p.sessoes}${p.usadas >= p.sessoes ? ' <span class="chip">Concluído</span>' : ''}</td><td class="num">${brl(p.valor)}</td>
+      <td>${p.ativo ? `<button class="btn-ghost btn-sm" data-act="pac-ativo" data-id="${esc(p.id)}" data-v="0">Encerrar</button>` : `<span class="chip">Encerrado</span> <button class="btn-ghost btn-sm" data-act="pac-ativo" data-id="${esc(p.id)}" data-v="1">Reabrir</button>`}</td></tr>`).join('')}</tbody></table></div>`
+    : '<div class="empty">Nenhum pacote vendido ainda.</div>';
+  return `<p class="muted">Quando o paciente tem pacote com saldo, cada consulta realizada abate uma sessão em vez de gerar cobrança.</p>${lista}
+  <form class="card stack" data-form="pacote" novalidate><h3>Novo pacote</h3>
+    <div class="grid-3">
+      <div class="field span-2"><label for="pk-pac">Paciente</label><select id="pk-pac" name="paciente_id" required><option value="">Escolha…</option>${S.pacientes.map(p => `<option value="${esc(p.id)}">${esc(p.nome)}</option>`).join('')}</select></div>
+      <div class="field"><label for="pk-prof">Profissional</label><select id="pk-prof" name="profissional_id"><option value="">Qualquer profissional</option>${S.profs.map(u => `<option value="${esc(u.id)}">${esc(u.nome)}</option>`).join('')}</select></div>
+      <div class="field"><label for="pk-ses">Sessões</label><input id="pk-ses" name="sessoes" type="text" inputmode="numeric" value="4" required></div>
+      <div class="field"><label for="pk-val">Valor total</label><input id="pk-val" name="valor" type="text" inputmode="decimal" placeholder="0,00" required></div>
+      <div class="field"><label for="pk-venc">Vencimento</label><input id="pk-venc" name="vencimento" type="date" value="${hojeISO()}"></div>
+      <div class="field span-2"><label for="pk-desc">Descrição</label><input id="pk-desc" name="descricao" type="text" placeholder="Pacote de 4 sessões"></div>
+      <div class="field"><span class="lbl">Pagamento</span><label class="check"><input type="checkbox" name="pago"> Já recebido</label></div>
+      <div class="field"><label for="pk-forma">Forma</label><select id="pk-forma" name="forma_pagamento"><option value="">—</option>${FORMAS.map(f => `<option>${f}</option>`).join('')}</select></div>
+    </div>
+    <div class="row"><button class="btn btn-primary btn-sm" type="submit">Registrar pacote</button></div></form>`;
+}
+function fProfissionais() {
+  const F = S.fin;
+  if (!S.profs.length) return `<div class="empty">Nenhum profissional ativo. Defina o perfil Profissional em Administração > Usuários.</div>`;
+  return `<p class="muted">Defina, para cada profissional, quem recebe do paciente, o valor padrão da consulta e o acordo com a clínica. Repasse e aluguel entram como receita da clínica, com vencimento no mês seguinte.</p>
+  ${S.profs.map(u => { const a = F.acordos.find(x => x.profissional_id === u.id) || { recebedor: 'clinica', modelo: 'sem_divisao', valor_modelo: 0, sala_id: null, dia_vencimento: 10, valor_sessao: null }; const k = esc(u.id); return `<form class="card stack" data-form="acordo" data-id="${k}" novalidate>
+    <div class="spread"><b style="font-size:17px">${esc(u.nome)}</b><span class="chip chip-accent">${a.modelo === 'repasse_mensal' ? 'Repasse mensal' : a.modelo === 'aluguel_hora' ? 'Aluguel por hora' : 'Sem divisão'}</span></div>
+    <div class="grid-3">
+      <div class="field"><label for="ac-r-${k}">Quem recebe do paciente</label><select id="ac-r-${k}" name="recebedor"><option value="clinica" ${a.recebedor === 'clinica' ? 'selected' : ''}>A clínica</option><option value="profissional" ${a.recebedor === 'profissional' ? 'selected' : ''}>O próprio profissional</option></select></div>
+      <div class="field"><label for="ac-s-${k}">Valor padrão da consulta</label><input id="ac-s-${k}" name="valor_sessao" type="text" inputmode="decimal" value="${esc(valorInput(a.valor_sessao))}" placeholder="0,00"></div>
+      <div class="field"><label for="ac-m-${k}">Acordo com a clínica</label><select id="ac-m-${k}" name="modelo" data-act-change="ac-modelo"><option value="sem_divisao" ${a.modelo === 'sem_divisao' ? 'selected' : ''}>Sem divisão</option><option value="repasse_mensal" ${a.modelo === 'repasse_mensal' ? 'selected' : ''}>Repasse mensal fixo</option><option value="aluguel_hora" ${a.modelo === 'aluguel_hora' ? 'selected' : ''}>Aluguel de sala por hora</option></select></div>
+      <div class="field ac-extra" ${a.modelo === 'sem_divisao' ? 'hidden' : ''}><label for="ac-v-${k}">${a.modelo === 'aluguel_hora' ? 'Valor por hora' : 'Valor mensal'}</label><input id="ac-v-${k}" name="valor_modelo" type="text" inputmode="decimal" value="${esc(valorInput(a.valor_modelo))}" placeholder="0,00"></div>
+      <div class="field ac-sala" ${a.modelo === 'aluguel_hora' ? '' : 'hidden'}><label for="ac-sl-${k}">Sala do aluguel</label><select id="ac-sl-${k}" name="sala_id"><option value="">Todas as salas</option>${S.salas.map(sl => `<option value="${esc(sl.id)}" ${a.sala_id === sl.id ? 'selected' : ''}>${esc(sl.nome)}</option>`).join('')}</select></div>
+      <div class="field ac-extra" ${a.modelo === 'sem_divisao' ? 'hidden' : ''}><label for="ac-d-${k}">Dia de vencimento</label><input id="ac-d-${k}" name="dia_vencimento" type="text" inputmode="numeric" value="${esc(a.dia_vencimento || 10)}"></div>
+    </div>
+    <div class="row"><button class="btn btn-quiet btn-sm" type="submit">Salvar</button></div></form>`; }).join('')}`;
+}
+function fRecorrentes() {
+  const F = S.fin; const ed = F.editRec;
+  const lista = F.recs.length ? `<div class="table-wrap"><table><thead><tr><th>Descrição</th><th>Categoria</th><th class="num">Valor</th><th class="num">Vence dia</th><th>Situação</th><th></th></tr></thead><tbody>
+    ${F.recs.map(r => `<tr><td><b>${esc(r.descricao)}</b>${r.tipo === 'receita' ? '<br><span class="small faint">Receita</span>' : ''}</td><td>${esc(r.categoria)}</td><td class="num">${brl(r.valor)}</td><td class="num">${r.dia_vencimento}</td><td>${r.ativo ? '<span class="chip chip-good">Ativo</span>' : '<span class="chip">Pausado</span>'}</td><td><button class="btn-ghost btn-sm" data-act="rec-editar" data-id="${esc(r.id)}">Editar</button></td></tr>`).join('')}</tbody></table></div>`
+    : '<div class="empty">Nenhum gasto recorrente cadastrado.</div>';
+  const tipo = ed?.tipo || 'despesa';
+  return `<p class="muted">Cada gasto recorrente entra sozinho em todos os meses, a partir do mês em que foi cadastrado. Para mudar um mês específico, edite o lançamento daquele mês.</p>${lista}
+  <form class="card stack" data-form="recorrente" novalidate><h3>${ed ? 'Editar recorrente' : 'Novo gasto recorrente'}</h3>
+    <div class="grid-3">
+      <div class="field span-2"><label for="rc-d">Descrição</label><input id="rc-d" name="descricao" type="text" value="${esc(ed?.descricao || '')}" placeholder="Aluguel do imóvel" required></div>
+      <div class="field"><label for="rc-t">Tipo</label><select id="rc-t" name="tipo"><option value="despesa" ${tipo === 'despesa' ? 'selected' : ''}>Gasto</option><option value="receita" ${tipo === 'receita' ? 'selected' : ''}>Receita</option></select></div>
+      <div class="field"><label for="rc-c">Categoria</label><input id="rc-c" name="categoria" type="text" list="cats-todas" value="${esc(ed?.categoria || '')}" placeholder="Aluguel" required></div>
+      <div class="field"><label for="rc-v">Valor</label><input id="rc-v" name="valor" type="text" inputmode="decimal" value="${esc(valorInput(ed?.valor))}" placeholder="0,00" required></div>
+      <div class="field"><label for="rc-dia">Dia de vencimento</label><input id="rc-dia" name="dia_vencimento" type="text" inputmode="numeric" value="${esc(ed?.dia_vencimento || 10)}"></div>
+      <div class="field"><span class="lbl">Situação</span><label class="check"><input type="checkbox" name="ativo" ${!ed || ed.ativo ? 'checked' : ''}> Ativo</label></div>
+    </div>
+    <datalist id="cats-todas">${CATS.despesa.concat(CATS.receita).map(c => `<option value="${esc(c)}">`).join('')}</datalist>
+    <div class="row"><button class="btn btn-primary btn-sm" type="submit">${ed ? 'Salvar' : 'Adicionar'}</button>${ed ? '<button class="btn btn-quiet btn-sm" type="button" data-act="rec-cancelar">Cancelar</button>' : ''}</div></form>`;
+}
+function vFinForm() {
+  const f = S.fin.form; if (!f) return '';
+  const tipo = f.tipo || 'receita';
+  return `<div class="modal" role="dialog" aria-modal="true" aria-labelledby="ff-t"><div class="modal-card"><form class="stack" data-form="lancamento" novalidate>
+    <div class="modal-head"><h2 id="ff-t">${f.id ? 'Editar lançamento' : 'Novo lançamento'}</h2><button type="button" class="btn-ghost btn-sm" data-act="fin-fechar">Fechar</button></div>
+    <div class="subtabs" role="radiogroup" aria-label="Tipo" style="align-self:flex-start">${[['receita', 'A receber'], ['despesa', 'A pagar']].map(([k, t]) => `<button type="button" role="radio" aria-checked="${tipo === k}" aria-selected="${tipo === k}" data-act="ff-tipo" data-t="${k}" ${f.origem && f.origem !== 'manual' ? 'disabled' : ''}>${t}</button>`).join('')}</div>
+    <div class="grid-2">
+      <div class="field span-2"><label for="ff-desc">Descrição</label><input id="ff-desc" name="descricao" type="text" value="${esc(f.descricao || '')}" required data-autofocus></div>
+      <div class="field"><label for="ff-cat">Categoria</label><input id="ff-cat" name="categoria" type="text" list="ff-cats" value="${esc(f.categoria || '')}" required><datalist id="ff-cats">${CATS[tipo].map(c => `<option value="${esc(c)}">`).join('')}</datalist></div>
+      <div class="field"><label for="ff-val">Valor</label><input id="ff-val" name="valor" type="text" inputmode="decimal" value="${esc(valorInput(f.valor))}" placeholder="0,00" required></div>
+      <div class="field"><label for="ff-venc">Vencimento</label><input id="ff-venc" name="vencimento" type="date" value="${esc(f.vencimento || hojeISO())}" required></div>
+      ${tipo === 'receita' ? `<div class="field"><label for="ff-pac">Paciente</label><select id="ff-pac" name="paciente_id"><option value="">Nenhum</option>${S.pacientes.map(p => `<option value="${esc(p.id)}" ${f.paciente_id === p.id ? 'selected' : ''}>${esc(p.nome)}</option>`).join('')}</select></div>
+      <div class="field"><label for="ff-prof">Profissional</label><select id="ff-prof" name="profissional_id"><option value="">Nenhum</option>${S.profs.map(u => `<option value="${esc(u.id)}" ${f.profissional_id === u.id ? 'selected' : ''}>${esc(u.nome)}</option>`).join('')}</select></div>
+      <div class="field"><label for="ff-rec">Quem recebe</label><select id="ff-rec" name="recebedor"><option value="clinica" ${f.recebedor !== 'profissional' ? 'selected' : ''}>A clínica</option><option value="profissional" ${f.recebedor === 'profissional' ? 'selected' : ''}>O profissional</option></select></div>` : ''}
+      <div class="field"><span class="lbl">Pagamento</span><label class="check"><input type="checkbox" name="pago" ${f.pago_em ? 'checked' : ''}> ${tipo === 'receita' ? 'Já recebido' : 'Já pago'}</label></div>
+      <div class="field"><label for="ff-pg">Data do pagamento</label><input id="ff-pg" name="pago_em" type="date" value="${esc(f.pago_em || hojeISO())}"></div>
+      <div class="field"><label for="ff-forma">Forma</label><select id="ff-forma" name="forma_pagamento"><option value="">—</option>${FORMAS.map(x => `<option ${f.forma_pagamento === x ? 'selected' : ''}>${x}</option>`).join('')}</select></div>
+      <div class="field span-2"><label for="ff-obs">Observação</label><textarea id="ff-obs" name="observacao" rows="2">${esc(f.observacao || '')}</textarea></div>
+    </div>
+    ${S.msg && S.fin.form ? msgBox() : ''}
+    <div class="row"><button class="btn btn-primary" type="submit">${f.id ? 'Salvar' : 'Lançar'}</button><button class="btn btn-quiet" type="button" data-act="fin-fechar">Cancelar</button></div>
+  </form></div></div>`;
+}
+function vFinPagar() {
+  const p = S.fin.pagar; if (!p) return '';
+  const l = p.l;
+  return `<div class="modal" role="dialog" aria-modal="true" aria-labelledby="fp-t"><div class="modal-card"><form class="stack" data-form="pagar" novalidate>
+    <div class="modal-head"><div class="stack" style="gap:4px"><h2 id="fp-t">${l.tipo === 'receita' ? 'Registrar recebimento' : 'Registrar pagamento'}</h2><span class="muted small">${esc(l.descricao)}${l.paciente ? ' · ' + esc(l.paciente) : ''}</span></div><button type="button" class="btn-ghost btn-sm" data-act="fin-fechar">Fechar</button></div>
+    <div class="grid-3">
+      <div class="field"><label for="fp-val">Valor</label><input id="fp-val" name="valor" type="text" inputmode="decimal" value="${esc(valorInput(l.valor))}" required data-autofocus></div>
+      <div class="field"><label for="fp-data">Data</label><input id="fp-data" name="pago_em" type="date" value="${hojeISO()}" required></div>
+      <div class="field"><label for="fp-forma">Forma</label><select id="fp-forma" name="forma_pagamento">${FORMAS.map(x => `<option>${x}</option>`).join('')}</select></div>
+    </div>
+    ${S.msg && S.fin.pagar ? msgBox() : ''}
+    <div class="row"><button class="btn btn-primary" type="submit">Confirmar</button><button class="btn btn-quiet" type="button" data-act="fin-fechar">Cancelar</button></div>
+  </form></div></div>`;
+}
+function vRecibo() {
+  const l = S.fin.recibo; if (!l) return '';
+  const pelaClinica = l.recebedor !== 'profissional';
+  const emissor = pelaClinica ? nomeClinica() : l.profissional;
+  const doc = pelaClinica ? (S.cfg.recibo_documento || '') : (l.profissional_registro || '');
+  const cidade = S.cfg.recibo_cidade || '';
+  const dt = l.pago_em || hojeISO();
+  return `<div class="modal" role="dialog" aria-modal="true" aria-labelledby="rc-t"><div class="modal-card stack" style="max-width:720px">
+    <div class="modal-head"><h2 id="rc-t">Recibo</h2><button type="button" class="btn-ghost btn-sm" data-act="fin-fechar">Fechar</button></div>
+    <div class="recibo-papel">
+      <div class="rc-topo"><div class="stack" style="gap:2px"><h2>RECIBO Nº ${esc(l.numero)}</h2><span class="muted">${esc(emissor)}${doc ? ' · ' + esc(doc) : ''}</span>${pelaClinica && S.cfg.recibo_endereco ? `<span class="muted">${esc(S.cfg.recibo_endereco)}</span>` : ''}</div><span class="rc-valor">${brl(l.valor)}</span></div>
+      <p>Recebi de <b>${esc(l.paciente)}</b>${l.paciente_cpf ? `, CPF ${esc(l.paciente_cpf)},` : ''} a importância de <b>${brl(l.valor)}</b> (${esc(porExtenso(l.valor))}), referente a ${esc(l.descricao)}${l.forma_pagamento ? `, pago via ${esc(l.forma_pagamento.toLowerCase())}` : ''}.</p>
+      <p>Para clareza, firmo o presente recibo.</p>
+      <p>${cidade ? esc(cidade) + ', ' : ''}${Number(dt.slice(8))} de ${MESES_LONGO[Number(dt.slice(5, 7)) - 1]} de ${dt.slice(0, 4)}.</p>
+      <div class="rc-assina"><i></i><b>${esc(emissor)}</b>${doc ? `<span class="muted">${esc(doc)}</span>` : ''}</div>
+    </div>
+    ${pelaClinica && !S.cfg.recibo_documento ? `<p class="faint small">Para o recibo sair com CPF ou CNPJ, endereço e cidade da clínica, preencha em Administração > Configurações.</p>` : ''}
+    <div class="row"><button class="btn btn-primary" data-act="recibo-imprimir">Imprimir ou salvar em PDF</button><button class="btn btn-quiet" data-act="fin-fechar">Fechar</button></div>
+  </div></div>`;
+}
+
 /* ---------- Meus dados (paciente) ---------- */
 function vMeusDados() {
   const p = S.pac;
@@ -1423,7 +1827,15 @@ function aDemo() {
   </section>`;
 }
 function aConfig() {
-  return `<form class="card stack" data-form="cfg-nome" novalidate><h3>Nome da clínica</h3>
+  return `<form class="card stack" data-form="cfg-recibo" novalidate><h3>Dados para o recibo</h3>
+    <p class="muted small">Aparecem nos recibos emitidos pela clínica. Recibos de pagamentos recebidos pelo próprio profissional saem com o nome e o registro dele.</p>
+    <div class="grid-3">
+      <div class="field"><label for="cf-doc">CPF ou CNPJ</label><input id="cf-doc" name="documento" type="text" value="${esc(S.cfg.recibo_documento || '')}"></div>
+      <div class="field span-2"><label for="cf-end">Endereço</label><input id="cf-end" name="endereco" type="text" value="${esc(S.cfg.recibo_endereco || '')}"></div>
+      <div class="field"><label for="cf-cid">Cidade</label><input id="cf-cid" name="cidade" type="text" value="${esc(S.cfg.recibo_cidade || '')}" placeholder="Piedade/SP"></div>
+    </div>
+    <div class="row"><button class="btn btn-quiet btn-sm" type="submit">Salvar dados do recibo</button></div></form>
+  <form class="card stack" data-form="cfg-nome" novalidate><h3>Nome da clínica</h3>
     <div class="field" style="max-width:460px"><label for="cf-nome">Nome exibido no topo e na tela de entrada</label><input id="cf-nome" name="nome" type="text" value="${esc(nomeClinica())}" required></div>
     <div class="row"><button class="btn btn-quiet btn-sm" type="submit">Salvar nome</button></div></form>
   <form class="card stack" data-form="cfg-agenda" novalidate><h3>Google Agenda (opcional)</h3><p class="muted small">A agenda da clínica funciona aqui no painel. Se quiser, vincule também uma Google Agenda para consulta na tela da Agenda.</p>
@@ -1485,6 +1897,22 @@ document.addEventListener('click', async (ev) => {
   else if (act === 'demo-reset') { await store.reset(); S.authMsg = { ok: true, t: 'Dados de exemplo restaurados.' }; render(); }
   else if (act === 'novo-pac') { S.ag.form = null; S.ag.sel = null; S.pform = {}; go('paciente-form'); }
   else if (act === 'abrir-pac') { S.ag.sel = null; S.ag.form = null; S.pid = t.dataset.id; S.ptab = 'cadastro'; S.psub = 'anamnese'; go('paciente'); }
+  else if (act === 'fin-tab') { S.fin.tab = t.dataset.t; S.fin.confirmDel = null; S.msg = null; render(); }
+  else if (act === 'fin-mes') { S.fin.mes = addMes(S.fin.mes, Number(t.dataset.n)); S.msg = null; await carregarFin().catch(e => { S.msg = { err: true, t: e.message }; }); render(); }
+  else if (act === 'fin-tipo') { S.fin.tipo = t.dataset.t; render(); }
+  else if (act === 'fin-novo') { S.msg = null; S.fin.form = { tipo: S.fin.tipo === 'despesa' ? 'despesa' : 'receita', vencimento: S.fin.mes <= hojeISO() && hojeISO() < addMes(S.fin.mes, 1) ? hojeISO() : S.fin.mes, recebedor: 'clinica' }; render(); }
+  else if (act === 'ff-tipo') { const f = $('form[data-form="lancamento"]'); const fd = f ? new FormData(f) : null; const o = fd ? Object.fromEntries(fd) : {}; if (fd) { o.valor = parseValor(fd.get('valor')); if (!fd.has('pago')) o.pago_em = null; } S.fin.form = { ...S.fin.form, ...o, tipo: t.dataset.t, categoria: '' }; render(); }
+  else if (act === 'fin-editar') { const l = S.fin.lanc.concat(S.fin.atrasados).find(x => x.id === t.dataset.id); if (l) { S.msg = null; S.fin.form = { ...l }; render(); } }
+  else if (act === 'fin-pagar') { const l = S.fin.lanc.concat(S.fin.atrasados).find(x => x.id === t.dataset.id); if (l) { S.msg = null; S.fin.pagar = { l }; render(); } }
+  else if (act === 'fin-recibo') { const l = S.fin.lanc.concat(S.fin.atrasados).find(x => x.id === t.dataset.id); if (l) { S.fin.recibo = l; render(); } }
+  else if (act === 'recibo-imprimir') { try { window.print(); } catch (x) { /* */ } }
+  else if (act === 'fin-fechar') { S.fin.form = null; S.fin.pagar = null; S.fin.recibo = null; S.msg = null; render(); }
+  else if (act === 'fin-del-ask') { S.fin.confirmDel = t.dataset.id; render(); }
+  else if (act === 'fin-del-nao') { S.fin.confirmDel = null; render(); }
+  else if (act === 'fin-del') { await tentar(() => store.removerLancamento(t.dataset.id), 'Lançamento excluído.'); S.fin.confirmDel = null; await carregarFin().catch(() => {}); render(); }
+  else if (act === 'rec-editar') { S.fin.editRec = { ...S.fin.recs.find(r => r.id === t.dataset.id) }; render(); $('#rc-d')?.focus(); }
+  else if (act === 'rec-cancelar') { S.fin.editRec = null; render(); }
+  else if (act === 'pac-ativo') { const p = S.fin.pacotes.find(x => x.id === t.dataset.id); if (p) { await tentar(() => store.salvarPacote({ ...p, ativo: t.dataset.v === '1' }), t.dataset.v === '1' ? 'Pacote reaberto.' : 'Pacote encerrado.'); S.fin.pacotes = await store.pacotes(); render(); } }
   else if (act === 'ag-mover') { const n = Number(t.dataset.n) * (S.ag.modo === 'dia' ? 1 : 7); S.ag.data = addDias(S.ag.data, n); S.msg = null; await carregarAgenda().catch(e => { S.msg = { err: true, t: e.message }; }); render(); }
   else if (act === 'ag-hoje') { S.ag.data = hojeISO(); S.msg = null; await carregarAgenda().catch(() => {}); render(); }
   else if (act === 'ag-modo') { S.ag.modo = t.dataset.m; S.msg = null; await carregarAgenda().catch(() => {}); render(); }
@@ -1532,6 +1960,8 @@ document.addEventListener('input', (ev) => {
 document.addEventListener('change', (ev) => {
   const a = ev.target.dataset.actChange;
   if (a === 'papel-muda') { const box = ev.target.closest('form').querySelector('.perm-box'); if (box) box.hidden = !CLINICOS.includes(ev.target.value); }
+  if (a === 'fin-sit') { S.fin.sit = ev.target.value; render(); return; }
+  if (a === 'ac-modelo') { const f = ev.target.closest('form'); f.querySelectorAll('.ac-extra').forEach(x => { x.hidden = ev.target.value === 'sem_divisao'; }); f.querySelector('.ac-sala').hidden = ev.target.value !== 'aluguel_hora'; const lb = f.querySelector('.ac-extra label'); if (lb) lb.textContent = ev.target.value === 'aluguel_hora' ? 'Valor por hora' : 'Valor mensal'; return; }
   if (a === 'ag-filtro') { S.ag.filtro = ev.target.value; S.ag.alvo = S.ag.filtro === 'prof' && CLINICOS.includes(papel()) ? S.perfil.id : ''; render(); return; }
   if (a === 'ag-alvo') { S.ag.alvo = ev.target.value; render(); return; }
   const fa = ev.target.closest('form[data-form="agendamento"]');
@@ -1546,7 +1976,11 @@ function lerAgForm(f) {
   if ('ini' in o) o.ini = Number(o.ini); if ('dur' in o) o.dur = Number(o.dur);
   return o;
 }
-document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape' && (S.ag.form || S.ag.sel)) { S.ag.form = null; S.ag.sel = null; S.msg = null; render(); } });
+document.addEventListener('keydown', (ev) => {
+  if (ev.key !== 'Escape') return;
+  if (S.ag.form || S.ag.sel) { S.ag.form = null; S.ag.sel = null; S.msg = null; render(); }
+  else if (S.fin.form || S.fin.pagar || S.fin.recibo) { S.fin.form = null; S.fin.pagar = null; S.fin.recibo = null; S.msg = null; render(); }
+});
 
 document.addEventListener('submit', async (ev) => {
   const f = ev.target.closest('form[data-form]'); if (!f) return;
@@ -1648,6 +2082,63 @@ document.addEventListener('submit', async (ev) => {
     await tentar(() => store.salvarAtalho(a), a.id ? 'Atalho salvo.' : 'Atalho adicionado ao painel.');
     if (!S.msg?.err) S.editLink = null;
     S.atalhos = await store.atalhos(); render();
+  }
+  else if (kind === 'lancamento') {
+    const f0 = { ...S.fin.form, ...Object.fromEntries(fd) }; if (!fd.has('pago')) f0.pago_em = null;
+    const valor = parseValor(fd.get('valor'));
+    S.fin.form = { ...f0, valor: Number.isNaN(valor) ? f0.valor : valor };
+    if (!val('descricao') || !val('categoria') || Number.isNaN(valor) || valor < 0 || !val('vencimento')) { S.msg = { err: true, t: 'Informe descrição, categoria, valor e vencimento.' }; return render(); }
+    const tipo = S.fin.form.tipo || 'receita';
+    const l = { id: S.fin.form.id, tipo, descricao: val('descricao'), categoria: val('categoria'), valor, vencimento: val('vencimento'), observacao: val('observacao'),
+      pago_em: fd.get('pago') === 'on' ? (val('pago_em') || hojeISO()) : null, forma_pagamento: fd.get('pago') === 'on' ? (val('forma_pagamento') || null) : null,
+      paciente_id: tipo === 'receita' ? (val('paciente_id') || null) : null, profissional_id: tipo === 'receita' ? (val('profissional_id') || null) : (S.fin.form.profissional_id || null), recebedor: tipo === 'receita' ? (val('recebedor') || 'clinica') : 'clinica' };
+    if (!l.id) delete l.id;
+    await tentar(() => store.salvarLancamento(l), l.id ? 'Lançamento salvo.' : 'Lançamento registrado.');
+    if (!S.msg?.err) { S.fin.form = null; await carregarFin().catch(() => {}); }
+    render();
+  }
+  else if (kind === 'pagar') {
+    const l = S.fin.pagar.l; const valor = parseValor(fd.get('valor'));
+    if (Number.isNaN(valor) || valor < 0 || !val('pago_em')) { S.msg = { err: true, t: 'Informe o valor e a data.' }; return render(); }
+    await tentar(() => store.salvarLancamento({ id: l.id, valor, pago_em: val('pago_em'), forma_pagamento: val('forma_pagamento') }), l.tipo === 'receita' ? 'Recebimento registrado.' : 'Pagamento registrado.');
+    if (!S.msg?.err) {
+      S.fin.pagar = null; await carregarFin().catch(() => {});
+      if (l.tipo === 'receita' && l.paciente_id) { const novo = S.fin.lanc.concat(S.fin.atrasados).find(x => x.id === l.id) || { ...l, valor, pago_em: val('pago_em'), forma_pagamento: val('forma_pagamento') }; S.msg = { t: 'Recebimento registrado. O recibo está pronto.' }; S.fin.recibo = novo; }
+    }
+    render();
+  }
+  else if (kind === 'pacote') {
+    const sessoes = parseInt(val('sessoes'), 10); const valor = parseValor(fd.get('valor'));
+    if (!val('paciente_id') || !(sessoes > 0) || Number.isNaN(valor)) { S.msg = { err: true, t: 'Escolha o paciente e informe as sessões e o valor.' }; return render(); }
+    const prof = val('profissional_id') || null;
+    const ac = S.fin.acordos.find(a => a.profissional_id === prof);
+    const desc = val('descricao') || `Pacote de ${sessoes} sessões`;
+    const pago = fd.get('pago') === 'on';
+    await tentar(() => store.salvarPacote({ paciente_id: val('paciente_id'), profissional_id: prof, descricao: desc, sessoes, valor },
+      { descricao: desc, valor, vencimento: val('vencimento') || hojeISO(), paciente_id: val('paciente_id'), profissional_id: prof, recebedor: ac?.recebedor || 'clinica', pago_em: pago ? hojeISO() : null, forma_pagamento: pago ? (val('forma_pagamento') || null) : null }), 'Pacote registrado. A cobrança entrou em Contas a receber.');
+    await carregarFin().catch(() => {}); render();
+  }
+  else if (kind === 'acordo') {
+    const id = f.dataset.id; const modelo = val('modelo');
+    const vs = val('valor_sessao') ? parseValor(val('valor_sessao')) : null; const vm = val('valor_modelo') ? parseValor(val('valor_modelo')) : 0;
+    const dia = Math.min(28, Math.max(1, parseInt(val('dia_vencimento') || '10', 10) || 10));
+    if (Number.isNaN(vs) || Number.isNaN(vm)) { S.msg = { err: true, t: 'Confira os valores informados.' }; return render(); }
+    const nome = S.profs.find(u => u.id === id)?.nome || '';
+    await tentar(() => store.salvarAcordo({ profissional_id: id, recebedor: val('recebedor'), modelo, valor_modelo: modelo === 'sem_divisao' ? 0 : vm, sala_id: modelo === 'aluguel_hora' ? (val('sala_id') || null) : null, dia_vencimento: dia, valor_sessao: vs }), `Acordo de ${nome} salvo.`);
+    await carregarFin().catch(() => {}); render();
+  }
+  else if (kind === 'recorrente') {
+    const valor = parseValor(fd.get('valor'));
+    if (!val('descricao') || !val('categoria') || Number.isNaN(valor)) { S.msg = { err: true, t: 'Informe descrição, categoria e valor.' }; return render(); }
+    const r = { id: S.fin.editRec?.id, tipo: val('tipo') || 'despesa', descricao: val('descricao'), categoria: val('categoria'), valor, dia_vencimento: Math.min(28, Math.max(1, parseInt(val('dia_vencimento') || '10', 10) || 10)), ativo: fd.get('ativo') === 'on' };
+    if (!r.id) delete r.id;
+    await tentar(() => store.salvarRecorrencia(r), r.id ? 'Recorrente salvo. Vale para os próximos meses.' : 'Recorrente adicionado. Já entrou no mês.');
+    if (!S.msg?.err) S.fin.editRec = null;
+    await carregarFin().catch(() => {}); render();
+  }
+  else if (kind === 'cfg-recibo') {
+    await tentar(async () => { await store.salvarConfig('recibo_documento', val('documento')); await store.salvarConfig('recibo_endereco', val('endereco')); await store.salvarConfig('recibo_cidade', val('cidade')); }, 'Dados do recibo salvos.');
+    S.cfg = await store.config(); render();
   }
   else if (kind === 'cfg-nome') {
     if (!val('nome')) { S.msg = { err: true, t: 'Informe o nome da clínica.' }; return render(); }

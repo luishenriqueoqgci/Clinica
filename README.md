@@ -10,10 +10,11 @@ Aplicação web da clínica: login único para equipe e pacientes, painel de bot
 | Painel | Todos | Botões das áreas internas e atalhos externos, conforme o perfil. Atalhos abrem em nova aba; o painel continua aberto na aba original |
 | Agenda | Equipe | Agenda própria por sala: visão por dia ou semana, de todos ou por sala, profissional e paciente. Bloqueia conflito de sala e de profissional e respeita o horário de cada sala. Situações: agendada, confirmada, realizada, faltou e cancelada. Google Agenda opcional para consulta |
 | Minhas consultas | Paciente | Próximas consultas e histórico, com sala e profissional |
+| Financeiro | Mestre e administradores | Resumo do mês (recebido, a receber, pago, a pagar e resultado), contas a receber e a pagar com vencimentos e atrasos, cobrança automática da consulta realizada, pacotes de sessões, acordo por profissional (quem recebe, valor da consulta, repasse mensal fixo ou aluguel de sala por hora), gastos recorrentes e recibo para o paciente |
 | Pacientes | Equipe | Lista com busca, cadastro e edição |
 | Ficha do paciente | Profissionais com permissão | Uma aba por especialidade: anamnese (campos comuns + campos próprios da especialidade) e atendimentos (data, tipo, evolução e conduta) |
 | Meus dados | Paciente | O próprio cadastro |
-| Administração | Mestre e administradores | Usuários e permissões, salas e horários, especialidades, atalhos, nome da clínica, Google Agenda e auditoria |
+| Administração | Mestre e administradores | Usuários e permissões, salas e horários, especialidades, atalhos, nome da clínica, dados do recibo, Google Agenda, auditoria e demonstração com dados de exemplo |
 
 ## Perfis
 
@@ -80,6 +81,7 @@ Regras de proteção dos dados de saúde (LGPD):
 ## Atualizações do banco
 Projetos criados com o `schema.sql` atual já têm tudo. Em projetos antigos, rode no SQL Editor, uma vez:
 - `supabase/atualizacao-01-agenda.sql` · salas, agendamentos e consultas do paciente (já aplicada no projeto da clínica)
+- `supabase/atualizacao-02-financeiro.sql` · financeiro: lançamentos, pacotes, acordos por profissional e recorrentes (já aplicada no projeto da clínica)
 
 ## Observações
 - A chave pública pode ficar no site: o acesso aos dados é protegido pelas regras de RLS do `schema.sql`.
